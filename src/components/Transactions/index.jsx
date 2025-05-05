@@ -5,23 +5,29 @@ const Transactions = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch transactions
         const data = await window.api.transactions.getTransactions();
         // Sort by date, newest first
         const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setTransactions(sorted);
+        
+        // Fetch settings
+        const settingsData = await window.api.settings.getSettings();
+        setSettings(settingsData);
       } catch (error) {
-        console.error('Error fetching transactions:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTransactions();
+    fetchData();
   }, []);
 
   const formatDate = (dateString) => {
@@ -32,7 +38,7 @@ const Transactions = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: settings?.currency || 'MAD'
     }).format(amount);
   };
 

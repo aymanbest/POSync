@@ -23,6 +23,7 @@ const Products = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const fileInputRef = useRef(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
+  const [settings, setSettings] = useState(null);
 
   // Fetch products and categories on component mount
   useEffect(() => {
@@ -31,9 +32,11 @@ const Products = () => {
       try {
         const productsData = await window.api.database.getProducts();
         const categoriesData = await window.api.database.getCategories();
+        const settingsData = await window.api.settings.getSettings();
         
         setProducts(productsData);
         setCategories(categoriesData);
+        setSettings(settingsData);
         
         // Check if categories are empty and prompt to create one
         if (categoriesData.length === 0) {
@@ -53,6 +56,11 @@ const Products = () => {
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Format currency based on settings
+  const formatCurrency = (amount) => {
+    return `${settings?.currency || 'DH'} ${amount.toFixed(2)}`;
   };
 
   const resetForm = () => {
@@ -428,7 +436,7 @@ const Products = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price* ($)
+                    Price* ({settings?.currency || 'DH'})
                   </label>
                   <input
                     type="number"
@@ -608,7 +616,7 @@ const Products = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.barcode}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getCategoryName(product.categoryId)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ${product.price.toFixed(2)}
+                    {formatCurrency(product.price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {product.stock !== undefined ? product.stock : 'N/A'}

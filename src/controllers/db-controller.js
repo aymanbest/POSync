@@ -322,7 +322,7 @@ const setupDbHandlers = () => {
         address: '123 Main St',
         phone: '555-123-4567',
         email: 'info@myposstore.com',
-        currency: 'USD',
+        currency: 'MAD',
         taxRate: 7.5,
         receiptFooter: 'Thank you for your business!',
         createdAt: new Date()

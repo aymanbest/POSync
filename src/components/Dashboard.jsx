@@ -10,6 +10,7 @@ const Dashboard = () => {
   });
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,6 +25,10 @@ const Dashboard = () => {
         // Fetch transactions
         const transactions = await window.api.transactions.getTransactions();
         
+        // Fetch settings
+        const settingsData = await window.api.settings.getSettings();
+        setSettings(settingsData);
+        
         // Calculate total sales
         const totalSales = transactions.reduce((sum, tx) => sum + tx.total, 0);
         
@@ -36,11 +41,10 @@ const Dashboard = () => {
         });
         
         // Get recent transactions (last 5)
-        setRecentTransactions(
-          transactions
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 5)
+        const sortedTransactions = transactions.sort((a, b) => 
+          new Date(b.createdAt) - new Date(a.createdAt)
         );
+        setRecentTransactions(sortedTransactions.slice(0, 5));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -59,7 +63,7 @@ const Dashboard = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: settings?.currency || 'MAD'
     }).format(amount);
   };
 

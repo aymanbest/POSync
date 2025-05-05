@@ -300,7 +300,12 @@ const POS = () => {
                   {product.name}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {settings?.currency || '$'}{product.price.toFixed(2)}
+                  <div className="flex-1 flex items-center">
+                    <span className="flex-1 truncate">{product.name}</span>
+                    <span className="text-gray-700 font-medium ml-2">
+                      {settings?.currency || 'DH'}{product.price.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -329,12 +334,18 @@ const POS = () => {
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
                     <div className="text-sm text-gray-500">
-                      {settings?.currency || '$'}{item.price.toFixed(2)} × {item.quantity}
+                      <div className="flex justify-between text-gray-700">
+                        <span>{item.name}</span>
+                        <span>{settings?.currency || 'DH'}{item.price.toFixed(2)} × {item.quantity}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="font-medium mr-2">
-                      {settings?.currency || '$'}{(item.price * item.quantity).toFixed(2)}
+                      <div className="flex justify-between text-gray-900 font-medium">
+                        <span>Total</span>
+                        <span>{settings?.currency || 'DH'}{(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
                     </div>
                     <div className="flex items-center border rounded">
                       <button 
@@ -368,17 +379,17 @@ const POS = () => {
         
         {/* Totals */}
         <div className="border-t pt-3">
-          <div className="flex justify-between text-sm mb-1">
-            <span>Subtotal:</span>
-            <span>{settings?.currency || '$'}{calculateSubtotal().toFixed(2)}</span>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Subtotal:</span>
+            <span>{settings?.currency || 'DH'}{calculateSubtotal().toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Tax ({settings?.taxRate || 0}%):</span>
-            <span>{settings?.currency || '$'}{calculateTax().toFixed(2)}</span>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Tax ({settings?.taxRate || 0}%):</span>
+            <span>{settings?.currency || 'DH'}{calculateTax().toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-bold text-lg mb-3">
+          <div className="flex justify-between text-lg font-bold">
             <span>Total:</span>
-            <span>{settings?.currency || '$'}{calculateTotal().toFixed(2)}</span>
+            <span>{settings?.currency || 'DH'}{calculateTotal().toFixed(2)}</span>
           </div>
           
           {/* Payment */}
@@ -418,7 +429,7 @@ const POS = () => {
                 </label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-md">
-                    {settings?.currency || '$'}
+                    {settings?.currency || 'DH'}
                   </span>
                   <input
                     type="number"
@@ -431,7 +442,7 @@ const POS = () => {
                 {paymentAmount && parseFloat(paymentAmount) >= calculateTotal() && (
                   <div className="text-sm mt-1">
                     <span>Change: </span>
-                    <span className="font-medium">{settings?.currency || '$'}{calculateChange().toFixed(2)}</span>
+                    <span className="font-medium">{settings?.currency || 'DH'}{calculateChange().toFixed(2)}</span>
                   </div>
                 )}
               </div>

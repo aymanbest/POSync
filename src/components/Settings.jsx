@@ -10,7 +10,7 @@ const Settings = () => {
     address: '',
     phone: '',
     email: '',
-    currency: 'USD',
+    currency: 'MAD',
     taxRate: 0,
     receiptFooter: ''
   });
@@ -29,7 +29,7 @@ const Settings = () => {
           address: settingsData.address || '',
           phone: settingsData.phone || '',
           email: settingsData.email || '',
-          currency: settingsData.currency || 'USD',
+          currency: settingsData.currency || 'MAD',
           taxRate: settingsData.taxRate || 0,
           receiptFooter: settingsData.receiptFooter || ''
         });
@@ -236,6 +236,7 @@ const Settings = () => {
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  <option value="MAD">MAD (DH)</option>
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="GBP">GBP (£)</option>
