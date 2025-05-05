@@ -11,6 +11,12 @@ const Categories = () => {
     description: ''
   });
   const [notification, setNotification] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -82,6 +88,56 @@ const Categories = () => {
     }));
   };
 
+  // Filter categories based on search
+  const getFilteredCategories = () => {
+    if (!searchTerm.trim()) return categories;
+    
+    return categories.filter(category => 
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
+  
+  // Get paginated categories
+  const getPaginatedCategories = () => {
+    const filteredCategories = getFilteredCategories();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Update total pages whenever filtered results change
+    const newTotalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+    if (newTotalPages !== totalPages) {
+      setTotalPages(newTotalPages);
+      // If current page is greater than new total pages, go to last page
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+        return filteredCategories.slice(
+          (newTotalPages - 1) * itemsPerPage,
+          newTotalPages * itemsPerPage
+        );
+      }
+    }
+    
+    return filteredCategories.slice(startIndex, endIndex);
+  };
+  
+  const handlePageChange = (page) => {
+    // Ensure page is within bounds
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+  
+  const handleItemsPerPageChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -136,18 +192,29 @@ const Categories = () => {
         </button>
       </div>
       
+      {/* Search */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search categories by name or description..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      
       {/* Categories List */}
       {isLoading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           <p className="mt-2 text-gray-500">Loading categories...</p>
         </div>
-      ) : categories.length === 0 ? (
+      ) : getFilteredCategories().length === 0 ? (
         <div className="text-center py-8 bg-white rounded-lg shadow p-6">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          <p className="mt-2 text-gray-500">No categories found</p>
+          <p className="mt-2 text-gray-500">{searchTerm ? 'No categories found matching your search' : 'No categories found'}</p>
           <button
             onClick={handleAddNew}
             className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
@@ -166,7 +233,7 @@ const Categories = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {categories.map(category => (
+              {getPaginatedCategories().map(category => (
                 <tr key={category._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{category.name}</div>
@@ -192,6 +259,129 @@ const Categories = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+          <div className="flex-1 flex justify-between items-center">
+            {/* Items per page selector */}
+            <div className="flex items-center">
+              <span className="text-sm text-gray-700 mr-2">
+                Show
+              </span>
+              <select 
+                value={itemsPerPage} 
+                onChange={handleItemsPerPageChange}
+                className="border border-gray-300 rounded-md text-sm px-2 py-1"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm text-gray-700 ml-2">
+                per page
+              </span>
+            </div>
+            
+            {/* Pagination info */}
+            <div className="hidden sm:block">
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{getFilteredCategories().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
+                <span className="font-medium">
+                  {Math.min(currentPage * itemsPerPage, getFilteredCategories().length)}
+                </span>{' '}
+                of <span className="font-medium">{getFilteredCategories().length}</span> categories
+              </p>
+            </div>
+            
+            {/* Pagination buttons */}
+            <div className="flex items-center space-x-2">
+              {/* Previous page button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                  currentPage === 1
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Previous</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    // If we have 5 or fewer pages, show all
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    // If we're near the start
+                    if (i < 4) {
+                      pageNum = i + 1;
+                    } else {
+                      pageNum = totalPages;
+                    }
+                  } else if (currentPage >= totalPages - 2) {
+                    // If we're near the end
+                    if (i === 0) {
+                      pageNum = 1;
+                    } else {
+                      pageNum = totalPages - 4 + i;
+                    }
+                  } else {
+                    // We're in the middle
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  // Special case for ellipsis
+                  if ((totalPages > 5 && i === 3 && currentPage <= 3) || 
+                      (totalPages > 5 && i === 1 && currentPage >= totalPages - 2)) {
+                    return (
+                      <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700">...</span>
+                    );
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Next page button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Next</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       )}
       

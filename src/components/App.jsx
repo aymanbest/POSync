@@ -8,6 +8,7 @@ import Transactions from './Transactions';
 import Settings from './Settings';
 import POS from './POS';
 import Navbar from './Navbar';
+import StockManagement from './StockManagement';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -63,6 +64,7 @@ const App = () => {
               <Route path="/categories" element={<Categories user={user} />} />
               <Route path="/transactions" element={<Transactions user={user} />} />
               <Route path="/settings" element={<Settings user={user} />} />
+              <Route path="/stock-management" element={<StockManagement user={user} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

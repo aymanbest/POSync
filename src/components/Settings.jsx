@@ -12,6 +12,9 @@ const Settings = () => {
     email: '',
     currency: 'MAD',
     taxRate: 0,
+    taxType: 'added', // 'added', 'included', or 'disabled'
+    taxName: 'Tax',
+    taxDescription: '',
     receiptFooter: ''
   });
 
@@ -31,6 +34,9 @@ const Settings = () => {
           email: settingsData.email || '',
           currency: settingsData.currency || 'MAD',
           taxRate: settingsData.taxRate || 0,
+          taxType: settingsData.taxType || 'added',
+          taxName: settingsData.taxName || 'Tax',
+          taxDescription: settingsData.taxDescription || '',
           receiptFooter: settingsData.receiptFooter || ''
         });
       } catch (error) {
@@ -247,20 +253,81 @@ const Settings = () => {
                   <option value="INR">INR (₹)</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tax Rate (%)
-                </label>
-                <input
-                  type="number"
-                  name="taxRate"
-                  value={formData.taxRate}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              
+              {/* Tax Settings */}
+              <div className="border-t pt-4">
+                <h3 className="text-md font-medium mb-3">Tax Configuration</h3>
+                
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tax Type
+                  </label>
+                  <select
+                    name="taxType"
+                    value={formData.taxType}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="added">Added to Price</option>
+                    <option value="included">Included in Price</option>
+                    <option value="disabled">Disabled</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.taxType === 'added' 
+                      ? 'Tax is calculated on top of product prices'
+                      : formData.taxType === 'included'
+                      ? 'Products already include tax in their prices'
+                      : 'No tax will be applied to transactions'}
+                  </p>
+                </div>
+                
+                {formData.taxType !== 'disabled' && (
+                  <>
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tax Name
+                      </label>
+                      <input
+                        type="text"
+                        name="taxName"
+                        value={formData.taxName}
+                        onChange={handleInputChange}
+                        placeholder="VAT, GST, Sales Tax, etc."
+                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tax Rate (%)
+                      </label>
+                      <input
+                        type="number"
+                        name="taxRate"
+                        value={formData.taxRate}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tax Description (Optional)
+                      </label>
+                      <textarea
+                        name="taxDescription"
+                        value={formData.taxDescription}
+                        onChange={handleInputChange}
+                        rows="2"
+                        placeholder="Tax registration number or other details"
+                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      ></textarea>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             

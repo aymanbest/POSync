@@ -124,32 +124,68 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
       
       y += 20;
       
+      // Totals
+      ctx.textAlign = 'left';
+      ctx.font = '12px Arial';
+      
+      // Subtotal
+      ctx.fillText('Subtotal', 40, y);
+      ctx.textAlign = 'right';
+      ctx.fillText(`$${transactionData.subtotal.toFixed(2)}`, width - 40, y);
+      y += 20;
+      
+      // Discount if applicable
+      if (transactionData.discount > 0) {
+        ctx.textAlign = 'left';
+        ctx.fillText(`Discount ${transactionData.discountType === 'percentage' ? `(${transactionData.discountValue}%)` : ''}`, 40, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(`-$${transactionData.discount.toFixed(2)}`, width - 40, y);
+        y += 20;
+      }
+      
+      // Tax if applicable
+      if (transactionData.taxType !== 'disabled') {
+        ctx.textAlign = 'left';
+        const taxText = `${transactionData.taxName || 'Tax'} (${transactionData.taxRate}%)${transactionData.taxType === 'included' ? ' (Included)' : ''}`;
+        ctx.fillText(taxText, 40, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(`$${transactionData.tax.toFixed(2)}`, width - 40, y);
+        y += 20;
+      }
+      
       // Total
       ctx.textAlign = 'left';
       ctx.font = 'bold 14px Arial';
       ctx.fillText('Total', 40, y);
-      
       ctx.textAlign = 'right';
       ctx.fillText(`$${transactionData.total.toFixed(2)}`, width - 40, y);
+      y += 20;
       
       // Payment info
-      y += 20;
       ctx.font = '12px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(`Received Amount / ${transactionData.paymentMethod}`, 40, y);
-      
+      ctx.fillText(`Received (${transactionData.paymentMethod})`, 40, y);
       ctx.textAlign = 'right';
       ctx.fillText(`$${transactionData.paymentAmount.toFixed(2)}`, width - 40, y);
+      y += 20;
+      
+      // Change if applicable
+      if (transactionData.change > 0) {
+        ctx.textAlign = 'left';
+        ctx.fillText('Change', 40, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(`$${transactionData.change.toFixed(2)}`, width - 40, y);
+        y += 20;
+      }
       
       // Line after totals
-      y += 15;
       ctx.beginPath();
       ctx.moveTo(40, y);
       ctx.lineTo(width - 40, y);
       ctx.stroke();
       
       // Footer text
-      y += 30;
+      y += 20;
       ctx.textAlign = 'center';
       ctx.fillText("Thanks for coming!", width/2, y);
       
@@ -331,14 +367,52 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
             
             {/* Totals */}
             <div className="border-t border-b py-2 mb-2">
-              <div className="flex justify-between font-bold">
+              {/* Subtotal */}
+              <div className="flex justify-between text-sm">
+                <div className="w-1/2">Subtotal</div>
+                <div className="w-1/2 text-right">${formatCurrency(transactionData.subtotal)}</div>
+              </div>
+              
+              {/* Discount if applicable */}
+              {transactionData.discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <div className="w-1/2">
+                    Discount {transactionData.discountType === 'percentage' ? `(${transactionData.discountValue}%)` : ''}
+                  </div>
+                  <div className="w-1/2 text-right text-red-500">-${formatCurrency(transactionData.discount)}</div>
+                </div>
+              )}
+              
+              {/* Tax if applicable */}
+              {transactionData.taxType !== 'disabled' && (
+                <div className="flex justify-between text-sm">
+                  <div className="w-1/2">
+                    {transactionData.taxName || 'Tax'} ({transactionData.taxRate}%)
+                    {transactionData.taxType === 'included' ? ' (Included)' : ''}
+                  </div>
+                  <div className="w-1/2 text-right">${formatCurrency(transactionData.tax)}</div>
+                </div>
+              )}
+              
+              {/* Total */}
+              <div className="flex justify-between font-bold mt-1">
                 <div className="w-1/2">Total</div>
                 <div className="w-1/2 text-right">${formatCurrency(transactionData.total)}</div>
               </div>
-              <div className="flex justify-between text-sm">
+              
+              {/* Payment */}
+              <div className="flex justify-between text-sm mt-1">
                 <div className="w-3/5">Received Amount / {transactionData.paymentMethod}</div>
                 <div className="w-2/5 text-right">${formatCurrency(transactionData.paymentAmount)}</div>
               </div>
+              
+              {/* Change if applicable */}
+              {transactionData.change > 0 && (
+                <div className="flex justify-between text-sm">
+                  <div className="w-1/2">Change</div>
+                  <div className="w-1/2 text-right">${formatCurrency(transactionData.change)}</div>
+                </div>
+              )}
             </div>
             
             {/* Footer */}

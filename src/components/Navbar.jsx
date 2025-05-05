@@ -10,6 +10,7 @@ const Navbar = ({ user, onLogout }) => {
     { path: '/products', label: 'Products' },
     { path: '/categories', label: 'Categories' },
     { path: '/transactions', label: 'Transactions' },
+    { path: '/stock-management', label: 'Stock Management' },
     { path: '/settings', label: 'Settings' }
   ];
 

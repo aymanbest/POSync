@@ -24,6 +24,11 @@ const Products = () => {
   const fileInputRef = useRef(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [settings, setSettings] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Fetch products and categories on component mount
   useEffect(() => {
@@ -263,6 +268,41 @@ const Products = () => {
       product.barcode.includes(searchTerm) ||
       product.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  };
+  
+  // Get paginated products
+  const getPaginatedProducts = () => {
+    const filteredProducts = getFilteredProducts();
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Update total pages whenever filtered results change
+    const newTotalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    if (newTotalPages !== totalPages) {
+      setTotalPages(newTotalPages);
+      // If current page is greater than new total pages, go to last page
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+        return filteredProducts.slice(
+          (newTotalPages - 1) * itemsPerPage,
+          newTotalPages * itemsPerPage
+        );
+      }
+    }
+    
+    return filteredProducts.slice(startIndex, endIndex);
+  };
+  
+  const handlePageChange = (page) => {
+    // Ensure page is within bounds
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+  
+  const handleItemsPerPageChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const getCategoryName = (categoryId) => {
@@ -507,7 +547,7 @@ const Products = () => {
                           className="h-10 w-10" 
                         />
                       ) : (
-                        <span className="text-gray-400">No image</span>
+                        <span className="text-gray-400">Image</span>
                       )}
                     </div>
                     <div className="flex-1">
@@ -565,7 +605,7 @@ const Products = () => {
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           <p className="mt-2 text-gray-500">Loading products...</p>
         </div>
-      ) : getFilteredProducts().length === 0 ? (
+      ) : getPaginatedProducts().length === 0 ? (
         <div className="text-center py-8 bg-white rounded-lg shadow p-6">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -594,7 +634,7 @@ const Products = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {getFilteredProducts().map(product => (
+              {getPaginatedProducts().map(product => (
                 <tr key={product._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -639,6 +679,129 @@ const Products = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+          <div className="flex-1 flex justify-between items-center">
+            {/* Items per page selector */}
+            <div className="flex items-center">
+              <span className="text-sm text-gray-700 mr-2">
+                Show
+              </span>
+              <select 
+                value={itemsPerPage} 
+                onChange={handleItemsPerPageChange}
+                className="border border-gray-300 rounded-md text-sm px-2 py-1"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm text-gray-700 ml-2">
+                per page
+              </span>
+            </div>
+            
+            {/* Pagination info */}
+            <div className="hidden sm:block">
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{getFilteredProducts().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
+                <span className="font-medium">
+                  {Math.min(currentPage * itemsPerPage, getFilteredProducts().length)}
+                </span>{' '}
+                of <span className="font-medium">{getFilteredProducts().length}</span> products
+              </p>
+            </div>
+            
+            {/* Pagination buttons */}
+            <div className="flex items-center space-x-2">
+              {/* Previous page button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                  currentPage === 1
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Previous</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    // If we have 5 or fewer pages, show all
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    // If we're near the start
+                    if (i < 4) {
+                      pageNum = i + 1;
+                    } else {
+                      pageNum = totalPages;
+                    }
+                  } else if (currentPage >= totalPages - 2) {
+                    // If we're near the end
+                    if (i === 0) {
+                      pageNum = 1;
+                    } else {
+                      pageNum = totalPages - 4 + i;
+                    }
+                  } else {
+                    // We're in the middle
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  // Special case for ellipsis
+                  if ((totalPages > 5 && i === 3 && currentPage <= 3) || 
+                      (totalPages > 5 && i === 1 && currentPage >= totalPages - 2)) {
+                    return (
+                      <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700">...</span>
+                    );
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-md text-sm ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Next page button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="sr-only">Next</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

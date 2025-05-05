@@ -168,12 +168,36 @@ const POS = () => {
   };
 
   const calculateTax = () => {
+    // If tax is disabled, return 0
+    if (settings?.taxType === 'disabled') {
+      return 0;
+    }
+    
     const subtotalAfterDiscount = calculateSubtotal() - calculateDiscount();
-    return subtotalAfterDiscount * (settings?.taxRate || 0) / 100;
+    
+    // Different calculation based on tax type
+    if (settings?.taxType === 'included') {
+      // For tax included in price, we calculate what portion of the price is tax
+      // Formula: price - (price / (1 + taxRate/100))
+      const taxRate = settings?.taxRate || 0;
+      return subtotalAfterDiscount - (subtotalAfterDiscount / (1 + taxRate/100));
+    } else {
+      // Default is 'added' - tax is added on top of the price
+      return subtotalAfterDiscount * (settings?.taxRate || 0) / 100;
+    }
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() - calculateDiscount() + calculateTax();
+    // If tax is included in the price, we don't need to add it again
+    // For tax disabled or added, we calculate normally
+    if (settings?.taxType === 'included') {
+      // For included tax, the total is just subtotal minus discount
+      // (tax is already part of the subtotal)
+      return calculateSubtotal() - calculateDiscount();
+    } else {
+      // For added tax or disabled tax (which returns 0)
+      return calculateSubtotal() - calculateDiscount() + calculateTax();
+    }
   };
 
   const calculateChange = () => {
@@ -211,6 +235,9 @@ const POS = () => {
         discountType: discount > 0 ? discountType : null,
         discountValue: discount,
         tax: calculateTax(),
+        taxName: settings?.taxName || 'Tax',
+        taxRate: settings?.taxRate || 0,
+        taxType: settings?.taxType || 'added',
         total: calculateTotal(),
         paymentMethod,
         paymentAmount: payment,
@@ -482,10 +509,16 @@ const POS = () => {
             </div>
           )}
           
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-600">Tax ({settings?.taxRate || 0}%):</span>
-            <span>{formatCurrency(calculateTax())}</span>
-          </div>
+          {/* Tax display - only show if tax is enabled */}
+          {settings?.taxType !== 'disabled' && (
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">
+                {settings?.taxName || 'Tax'} ({settings?.taxRate || 0}%){settings?.taxType === 'included' ? ' (Included)' : ''}:
+              </span>
+              <span>{formatCurrency(calculateTax())}</span>
+            </div>
+          )}
+          
           <div className="flex justify-between text-lg font-bold">
             <span>Total:</span>
             <span>{formatCurrency(calculateTotal())}</span>
