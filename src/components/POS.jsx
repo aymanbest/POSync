@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReceiptModal from './POS/ReceiptModal';
 
 const POS = () => {
   const [products, setProducts] = useState([]);
@@ -16,6 +17,8 @@ const POS = () => {
   const [discountType, setDiscountType] = useState('percentage'); // 'percentage' or 'flat'
   const [discountValue, setDiscountValue] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [currentTransaction, setCurrentTransaction] = useState(null);
 
   // Fetch initial data
   useEffect(() => {
@@ -191,27 +194,14 @@ const POS = () => {
       // Save transaction
       const result = await window.api.transactions.createTransaction(transaction);
       
-      // Print receipt
-      const receiptData = {
-        businessName: settings?.businessName || 'My POS Store',
-        address: settings?.address || '',
-        phone: settings?.phone || '',
-        receiptId: result._id,
-        date: new Date().toLocaleString(),
-        items: transaction.items,
-        subtotal: transaction.subtotal,
-        discount: transaction.discount,
-        discountType: transaction.discountType,
-        discountValue: transaction.discountValue,
-        tax: transaction.tax,
-        total: transaction.total,
-        paymentMethod: transaction.paymentMethod,
-        paymentAmount: transaction.paymentAmount,
-        change: transaction.change,
-        footer: settings?.receiptFooter || 'Thank you for your business!'
-      };
+      // Store transaction data for the receipt modal
+      setCurrentTransaction({
+        ...transaction,
+        receiptId: result._id || 'INV000000',
+      });
       
-      await window.api.print.printReceipt(receiptData);
+      // Show receipt modal
+      setShowReceiptModal(true);
       
       // Clear cart after successful transaction
       clearCart();
@@ -266,6 +256,19 @@ const POS = () => {
           {notification.message}
         </div>
       )}
+      
+      {/* Receipt Modal */}
+      <ReceiptModal 
+        isOpen={showReceiptModal}
+        onClose={() => setShowReceiptModal(false)}
+        transactionData={currentTransaction}
+        businessInfo={{
+          businessName: settings?.businessName || 'My POS Store',
+          address: settings?.address || '',
+          phone: settings?.phone || '',
+          employee: settings?.defaultEmployee || 'Cashier'
+        }}
+      />
       
       {/* Product Selection */}
       <div className="md:col-span-2 bg-white rounded-lg shadow p-4">

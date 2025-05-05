@@ -11,18 +11,25 @@
     "build-react": "webpack --config webpack.config.js",
     "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css"
   },
-  "keywords": ["pos", "electron", "retail", "point-of-sale"],
+  "keywords": [
+    "pos",
+    "electron",
+    "retail",
+    "point-of-sale"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "electron": "^25.0.0",
     "electron-squirrel-startup": "^1.0.0",
+    "electron-store": "^8.1.0",
+    "html-to-image": "^1.11.13",
+    "jsbarcode": "^3.11.6",
     "nedb": "^1.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.10.0",
-    "tailwindcss": "^3.3.0",
-    "electron-store": "^8.1.0"
+    "tailwindcss": "^3.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.5",
@@ -56,15 +63,21 @@
       "!**/._*"
     ],
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "build/icon.icns"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "icon": "build/icon.png"
     },
     "nsis": {

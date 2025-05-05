@@ -24,4 +24,51 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Receipt print styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .receipt-modal * {
+    visibility: visible;
+  }
+  
+  .receipt-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important; /* Standard receipt width */
+    padding: 5mm;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+  
+  .receipt-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    background: white;
+  }
+  
+  .receipt-actions, .receipt-close-btn {
+    display: none !important;
+  }
+  
+  /* Ensure barcode is properly centered when printing */
+  .receipt-content svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+  
+  /* Improve text alignment in receipt */
+  .receipt-content .text-center {
+    text-align: center !important;
+  }
 } 
