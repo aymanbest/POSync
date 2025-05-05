@@ -9,6 +9,7 @@ import Settings from './Settings';
 import POS from './POS';
 import Navbar from './Navbar';
 import StockManagement from './StockManagement';
+import Reports from '../pages/Reports';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -65,6 +66,7 @@ const App = () => {
               <Route path="/transactions" element={<Transactions user={user} />} />
               <Route path="/settings" element={<Settings user={user} />} />
               <Route path="/stock-management" element={<StockManagement user={user} />} />
+              <Route path="/reports" element={<Reports user={user} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>

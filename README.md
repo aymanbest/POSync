@@ -104,4 +104,69 @@ This project is licensed under the ISC License.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. 
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+# POS System Reports Module
+
+## Installation Instructions
+
+To integrate the new Reports component into your existing POS system, follow these steps:
+
+1. First, install the required packages:
+
+```bash
+npm install recharts
+```
+
+2. Add the new Reports route to your router configuration. In your main router file (likely in App.jsx or similar), add:
+
+```jsx
+import Reports from './pages/Reports';
+
+// Inside your Routes component:
+<Route path="/reports" element={<Reports />} />
+```
+
+3. Add a link to the Reports page in your navigation menu:
+
+```jsx
+<Link to="/reports" className="nav-link">
+  <i className="fas fa-chart-bar"></i>
+  Reports
+</Link>
+```
+
+## Features
+
+The Reports module includes:
+
+- **Sales Report**: View sales data with charts for different time periods
+- **Date Range Report**: Analyze sales between custom dates with comparison options
+- **Stock Products Report**: Track inventory levels and product stock status
+- **CSV Export**: Export any report data to CSV for further analysis
+- **Interactive Charts**: Visualize data with interactive charts using Recharts
+
+## Report Types
+
+### Sales Report
+- View sales volume and revenue over time
+- Filter by different time frames (day, week, month, year)
+- See top-selling products with detailed breakdown
+
+### Date Range Report
+- Select custom date ranges for analysis
+- Compare with previous periods
+- Daily breakdown of sales and revenue
+
+### Stock Products Report
+- Monitor stock levels across your inventory
+- Identify low stock and out-of-stock items
+- View inventory value by product and category
+- Sort and filter products by various criteria
+
+## Customization
+
+You can customize the reports by:
+- Adjusting the low stock threshold in your settings
+- Modifying the chart colors in the component files
+- Adding additional metrics by extending the component logic 

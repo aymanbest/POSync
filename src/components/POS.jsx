@@ -79,8 +79,11 @@ const POS = () => {
   };
 
   const addToCart = (product) => {
+    // Get the effective stock (current stock minus what's already in cart)
+    const effectiveStock = getEffectiveStock(product);
+    
     // Prevent adding out of stock items
-    if (product.stock <= 0) {
+    if (effectiveStock <= 0) {
       showNotification(`${product.name} is out of stock`, 'error');
       return;
     }
@@ -89,12 +92,7 @@ const POS = () => {
       const existingItem = currentCart.find(item => item._id === product._id);
       
       if (existingItem) {
-        // Check if we have enough stock for the increased quantity
-        if (existingItem.quantity + 1 > product.stock) {
-          showNotification(`Not enough stock available for ${product.name}`, 'error');
-          return currentCart;
-        }
-        
+        // We already checked effective stock above, so we can safely increment
         return currentCart.map(item =>
           item._id === product._id
             ? { ...item, quantity: item.quantity + 1 }
@@ -112,23 +110,45 @@ const POS = () => {
       return;
     }
     
-    // Find the product to check stock
+    // Find the product and calculate maximum quantity based on stock
     const product = products.find(p => p._id === productId);
     if (!product) return;
     
-    // Check if we have enough stock for the new quantity
-    if (newQuantity > product.stock) {
-      showNotification(`Not enough stock available for ${product.name}`, 'error');
-      return;
-    }
+    // Find current cart item
+    const currentItem = cart.find(item => item._id === productId);
+    if (!currentItem) return;
     
-    setCart(currentCart =>
-      currentCart.map(item =>
-        item._id === productId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
+    // Check if we're trying to increase quantity
+    if (newQuantity > currentItem.quantity) {
+      // Only need to check stock when increasing
+      const effectiveStock = getEffectiveStock(product);
+      const availableToAdd = product.stock - currentItem.quantity;
+      
+      if (availableToAdd <= 0) {
+        showNotification(`Not enough stock available for ${product.name}`, 'error');
+        return;
+      }
+      
+      // Only allow adding up to the available stock
+      const allowedQuantity = Math.min(newQuantity, currentItem.quantity + availableToAdd);
+      
+      setCart(currentCart =>
+        currentCart.map(item =>
+          item._id === productId
+            ? { ...item, quantity: allowedQuantity }
+            : item
+        )
+      );
+    } else {
+      // When decreasing quantity, no need to check stock
+      setCart(currentCart =>
+        currentCart.map(item =>
+          item._id === productId
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+      );
+    }
   };
 
   const removeFromCart = (productId) => {
@@ -152,6 +172,13 @@ const POS = () => {
       
       return matchesCategory && matchesSearch;
     });
+  };
+
+  const getEffectiveStock = (product) => {
+    // Find the product in cart if it exists
+    const cartItem = cart.find(item => item._id === product._id);
+    // Calculate real-time effective stock by subtracting cart quantity
+    return cartItem ? Math.max(0, product.stock - cartItem.quantity) : product.stock;
   };
 
   const calculateSubtotal = () => {
@@ -389,44 +416,53 @@ const POS = () => {
         
         {/* Products Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-          {getFilteredProducts().map(product => (
-            <div 
-              key={product._id}
-              onClick={() => addToCart(product)}
-              className={`bg-white border ${product.stock <= 0 ? 'border-red-300 opacity-60' : 'border-gray-200'} rounded-md p-2 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors`}
-            >
-              <div className="text-center">
-                <div className="h-16 flex items-center justify-center">
-                  {product.imageUrl ? (
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      className="max-h-full max-w-full object-contain" 
-                    />
+          {getFilteredProducts().map(product => {
+            // Calculate effective stock for display
+            const effectiveStock = getEffectiveStock(product);
+            
+            return (
+              <div 
+                key={product._id}
+                onClick={() => addToCart(product)}
+                className={`bg-white border ${effectiveStock <= 0 ? 'border-red-300 opacity-60' : 'border-gray-200'} rounded-md p-2 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors`}
+              >
+                <div className="text-center">
+                  <div className="h-16 flex items-center justify-center">
+                    {product.imageUrl ? (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name}
+                        className="max-h-full max-w-full object-contain" 
+                      />
+                    ) : (
+                      <div className="bg-gray-200 w-12 h-12 rounded-full flex items-center justify-center">
+                        <span className="text-gray-500 text-xs">{product.name.slice(0, 2).toUpperCase()}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 text-sm font-medium truncate" title={product.name}>
+                    {product.name}
+                  </div>
+                  <div className="text-sm text-gray-700 font-medium">
+                    {formatCurrency(product.price)}
+                  </div>
+                  {effectiveStock <= 0 ? (
+                    <div className="text-xs mt-1 bg-red-600 text-white px-2 py-0.5 rounded font-medium" style={{display: 'inline-block'}}>
+                      Out of stock
+                    </div>
+                  ) : effectiveStock < (settings?.lowStockThreshold || 5) ? (
+                    <div className="text-xs mt-1" style={{backgroundColor: '#FBBF24', color: '#000000', padding: '2px 8px', borderRadius: '9999px', display: 'inline-block', fontWeight: '500'}}>
+                      Stock: {effectiveStock}
+                    </div>
                   ) : (
-                    <div className="bg-gray-200 w-12 h-12 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500 text-xs">{product.name.slice(0, 2).toUpperCase()}</span>
+                    <div className="text-xs mt-1" style={{backgroundColor: '#34D399', color: '#000000', padding: '2px 8px', borderRadius: '9999px', display: 'inline-block', fontWeight: '500'}}>
+                      Stock: {effectiveStock}
                     </div>
                   )}
                 </div>
-                <div className="mt-2 text-sm font-medium truncate" title={product.name}>
-                  {product.name}
-                </div>
-                <div className="text-sm text-gray-700 font-medium">
-                  {formatCurrency(product.price)}
-                </div>
-                <div className={`text-xs mt-1 ${
-                  product.stock <= 0 
-                    ? 'text-white bg-red-600 px-2 py-0.5 rounded-full inline-block' 
-                    : product.stock < (settings?.lowStockThreshold || 5) 
-                      ? 'text-white bg-amber-500 px-2 py-0.5 rounded-full inline-block' 
-                      : 'text-white bg-green-600 px-2 py-0.5 rounded-full inline-block'
-                }`}>
-                  {product.stock <= 0 ? 'Out of stock' : `Stock: ${product.stock}`}
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       
