@@ -12,6 +12,10 @@ const POS = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
   const barcodeInputRef = useRef(null);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [discountType, setDiscountType] = useState('percentage'); // 'percentage' or 'flat'
+  const [discountValue, setDiscountValue] = useState('');
+  const [discount, setDiscount] = useState(0);
 
   // Fetch initial data
   useEffect(() => {
@@ -104,6 +108,8 @@ const POS = () => {
   const clearCart = () => {
     setCart([]);
     setPaymentAmount('');
+    setDiscount(0);
+    setDiscountValue('');
   };
 
   const getFilteredProducts = () => {
@@ -122,12 +128,22 @@ const POS = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
+  const calculateDiscount = () => {
+    const subtotal = calculateSubtotal();
+    if (discountType === 'percentage') {
+      return subtotal * (discount / 100);
+    } else {
+      return discount;
+    }
+  };
+
   const calculateTax = () => {
-    return calculateSubtotal() * (settings?.taxRate || 0) / 100;
+    const subtotalAfterDiscount = calculateSubtotal() - calculateDiscount();
+    return subtotalAfterDiscount * (settings?.taxRate || 0) / 100;
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
+    return calculateSubtotal() - calculateDiscount() + calculateTax();
   };
 
   const calculateChange = () => {
@@ -161,6 +177,9 @@ const POS = () => {
           quantity: item.quantity
         })),
         subtotal: calculateSubtotal(),
+        discount: calculateDiscount(),
+        discountType: discount > 0 ? discountType : null,
+        discountValue: discount,
         tax: calculateTax(),
         total: calculateTotal(),
         paymentMethod,
@@ -181,6 +200,9 @@ const POS = () => {
         date: new Date().toLocaleString(),
         items: transaction.items,
         subtotal: transaction.subtotal,
+        discount: transaction.discount,
+        discountType: transaction.discountType,
+        discountValue: transaction.discountValue,
         tax: transaction.tax,
         total: transaction.total,
         paymentMethod: transaction.paymentMethod,
@@ -200,6 +222,35 @@ const POS = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Handle applying discount
+  const handleApplyDiscount = () => {
+    if (!discountValue || parseFloat(discountValue) <= 0) {
+      showNotification('Please enter a valid discount value', 'error');
+      return;
+    }
+
+    const value = parseFloat(discountValue);
+
+    // For percentage, validate it's not over 100%
+    if (discountType === 'percentage' && value > 100) {
+      showNotification('Percentage discount cannot exceed 100%', 'error');
+      return;
+    }
+
+    // For flat amount, validate it's not more than the subtotal
+    if (discountType === 'flat' && value > calculateSubtotal()) {
+      showNotification('Discount cannot be greater than subtotal', 'error');
+      return;
+    }
+
+    setDiscount(value);
+    setShowDiscountModal(false);
+    showNotification(
+      `Discount applied: ${discountType === 'percentage' ? `${value}%` : formatCurrency(value)}`,
+      'success'
+    );
   };
 
   return (
@@ -377,6 +428,17 @@ const POS = () => {
             <span className="text-gray-600">Subtotal:</span>
             <span>{formatCurrency(calculateSubtotal())}</span>
           </div>
+          
+          {/* Discount display */}
+          {discount > 0 && (
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">
+                Discount {discountType === 'percentage' ? `(${discount}%)` : ''}:
+              </span>
+              <span className="text-red-500">-{formatCurrency(calculateDiscount())}</span>
+            </div>
+          )}
+          
           <div className="flex justify-between mb-2">
             <span className="text-gray-600">Tax ({settings?.taxRate || 0}%):</span>
             <span>{formatCurrency(calculateTax())}</span>
@@ -384,6 +446,21 @@ const POS = () => {
           <div className="flex justify-between text-lg font-bold">
             <span>Total:</span>
             <span>{formatCurrency(calculateTotal())}</span>
+          </div>
+          
+          {/* Discount Button */}
+          <div className="mt-2 mb-2">
+            <button
+              onClick={() => setShowDiscountModal(true)}
+              disabled={cart.length === 0}
+              className={`w-full py-1 rounded-md text-sm bg-purple-500 text-white hover:bg-purple-600 ${
+                cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {discount > 0 
+                ? `Modify Discount (${discountType === 'percentage' ? `${discount}%` : formatCurrency(discount)})` 
+                : 'Apply Discount'}
+            </button>
           </div>
           
           {/* Payment */}
@@ -473,6 +550,108 @@ const POS = () => {
           </div>
         </div>
       </div>
+
+      {/* Discount Modal */}
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">Apply Discount</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Discount Type
+              </label>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setDiscountType('percentage')}
+                  className={`flex-1 py-2 rounded-md text-sm ${
+                    discountType === 'percentage' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Percentage (%)
+                </button>
+                <button
+                  onClick={() => setDiscountType('flat')}
+                  className={`flex-1 py-2 rounded-md text-sm ${
+                    discountType === 'flat' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Flat Amount
+                </button>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {discountType === 'percentage' ? 'Percentage (%)' : 'Amount'}
+              </label>
+              <div className="flex">
+                {discountType === 'flat' && (
+                  <span className="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-md">
+                    {settings?.currency || 'MAD'}
+                  </span>
+                )}
+                <input
+                  type="number"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  placeholder={discountType === 'percentage' ? "10" : "50.00"}
+                  min="0"
+                  max={discountType === 'percentage' ? "100" : ""}
+                  step={discountType === 'percentage' ? "1" : "0.01"}
+                  className={`flex-1 border border-gray-300 p-2 ${
+                    discountType === 'flat' ? 'rounded-r-md' : 'rounded-md'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                {discountType === 'percentage' && (
+                  <span className="inline-flex items-center px-3 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 rounded-r-md">
+                    %
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Preview */}
+            {discountValue && parseFloat(discountValue) > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-gray-700 mb-1">Discount preview:</p>
+                <p className="text-sm">
+                  <span className="font-medium">Subtotal:</span> {formatCurrency(calculateSubtotal())}
+                </p>
+                <p className="text-sm text-red-500">
+                  <span className="font-medium">Discount:</span> -{formatCurrency(
+                    discountType === 'percentage' 
+                      ? calculateSubtotal() * (parseFloat(discountValue) / 100)
+                      : parseFloat(discountValue)
+                  )}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setShowDiscountModal(false);
+                  setDiscountValue('');
+                }}
+                className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyDiscount}
+                className="flex-1 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
