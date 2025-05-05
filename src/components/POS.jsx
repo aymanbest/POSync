@@ -45,6 +45,11 @@ const POS = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Format currency based on settings
+  const formatCurrency = (amount) => {
+    return `${settings?.currency || 'MAD'} ${amount.toFixed(2)}`;
+  };
+
   const handleBarcodeSubmit = (e) => {
     e.preventDefault();
     const barcode = e.target.barcode.value.trim();
@@ -299,13 +304,8 @@ const POS = () => {
                 <div className="mt-2 text-sm font-medium truncate" title={product.name}>
                   {product.name}
                 </div>
-                <div className="text-sm text-gray-500">
-                  <div className="flex-1 flex items-center">
-                    <span className="flex-1 truncate">{product.name}</span>
-                    <span className="text-gray-700 font-medium ml-2">
-                      {settings?.currency || 'DH'}{product.price.toFixed(2)}
-                    </span>
-                  </div>
+                <div className="text-sm text-gray-700 font-medium">
+                  {formatCurrency(product.price)}
                 </div>
               </div>
             </div>
@@ -334,18 +334,12 @@ const POS = () => {
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
                     <div className="text-sm text-gray-500">
-                      <div className="flex justify-between text-gray-700">
-                        <span>{item.name}</span>
-                        <span>{settings?.currency || 'DH'}{item.price.toFixed(2)} × {item.quantity}</span>
-                      </div>
+                      {formatCurrency(item.price)} × {item.quantity}
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="font-medium mr-2">
-                      <div className="flex justify-between text-gray-900 font-medium">
-                        <span>Total</span>
-                        <span>{settings?.currency || 'DH'}{(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
+                      {formatCurrency(item.price * item.quantity)}
                     </div>
                     <div className="flex items-center border rounded">
                       <button 
@@ -381,15 +375,15 @@ const POS = () => {
         <div className="border-t pt-3">
           <div className="flex justify-between mb-2">
             <span className="text-gray-600">Subtotal:</span>
-            <span>{settings?.currency || 'DH'}{calculateSubtotal().toFixed(2)}</span>
+            <span>{formatCurrency(calculateSubtotal())}</span>
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-gray-600">Tax ({settings?.taxRate || 0}%):</span>
-            <span>{settings?.currency || 'DH'}{calculateTax().toFixed(2)}</span>
+            <span>{formatCurrency(calculateTax())}</span>
           </div>
           <div className="flex justify-between text-lg font-bold">
             <span>Total:</span>
-            <span>{settings?.currency || 'DH'}{calculateTotal().toFixed(2)}</span>
+            <span>{formatCurrency(calculateTotal())}</span>
           </div>
           
           {/* Payment */}
@@ -429,7 +423,7 @@ const POS = () => {
                 </label>
                 <div className="flex">
                   <span className="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 rounded-l-md">
-                    {settings?.currency || 'DH'}
+                    {settings?.currency || 'MAD'}
                   </span>
                   <input
                     type="number"
@@ -442,7 +436,7 @@ const POS = () => {
                 {paymentAmount && parseFloat(paymentAmount) >= calculateTotal() && (
                   <div className="text-sm mt-1">
                     <span>Change: </span>
-                    <span className="font-medium">{settings?.currency || 'DH'}{calculateChange().toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(calculateChange())}</span>
                   </div>
                 )}
               </div>
