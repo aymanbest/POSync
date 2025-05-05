@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 80mm; /* Standard receipt width */
+      background-color: white;
+    }
+    .receipt {
+      padding: 5mm;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 5mm;
+    }
+    .business-name {
+      font-size: 16pt;
+      font-weight: bold;
+    }
+    .receipt-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      margin-bottom: 5mm;
+    }
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 3mm 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    th {
+      text-align: left;
+      padding: 1mm 0;
+    }
+    td {
+      padding: 1mm 0;
+    }
+    .total-section {
+      margin-top: 3mm;
+      margin-bottom: 3mm;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+    }
+    .total-label {
+      font-weight: bold;
+    }
+    .grand-total {
+      font-size: 12pt;
+      font-weight: bold;
+    }
+    .footer {
+      text-align: center;
+      font-size: 9pt;
+      margin-top: 5mm;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <!-- Hidden data for JavaScript -->
+    <div id="receipt-data" class="hidden"></div>
+    
+    <!-- Header -->
+    <div class="header">
+      <div class="business-name" id="business-name"></div>
+    </div>
+    
+    <!-- Receipt Info -->
+    <div class="receipt-info">
+      <div>Date: <span id="date"></span></div>
+      <div>Receipt: <span id="receipt-id"></span></div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <!-- Items -->
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="items-body">
+        <!-- Items will be inserted here by JavaScript -->
+      </tbody>
+    </table>
+    
+    <div class="divider"></div>
+    
+    <!-- Totals -->
+    <div class="total-section">
+      <div class="total-row">
+        <div>Subtotal:</div>
+        <div id="subtotal"></div>
+      </div>
+      <div class="total-row">
+        <div>Tax:</div>
+        <div id="tax"></div>
+      </div>
+      <div class="total-row grand-total">
+        <div class="total-label">TOTAL:</div>
+        <div id="total"></div>
+      </div>
+      <div class="total-row">
+        <div>Payment Method:</div>
+        <div id="payment-method"></div>
+      </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <!-- Footer -->
+    <div class="footer" id="footer"></div>
+  </div>
+</body>
+</html> 

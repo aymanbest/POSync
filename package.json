@@ -1,0 +1,75 @@
+{
+  "name": "electron-pos",
+  "version": "1.0.0",
+  "description": "Electron POS Application with NeDB",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "npm run build-react && electron . --dev",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build-react && electron-builder",
+    "build-react": "webpack --config webpack.config.js",
+    "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css"
+  },
+  "keywords": ["pos", "electron", "retail", "point-of-sale"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^25.0.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "nedb": "^1.8.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0",
+    "tailwindcss": "^3.3.0",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "@babel/preset-react": "^7.22.5",
+    "babel-loader": "^9.1.2",
+    "css-loader": "^6.8.1",
+    "electron-builder": "^24.4.0",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.85.0",
+    "webpack-cli": "^5.1.1"
+  },
+  "build": {
+    "appId": "com.electronpos.app",
+    "productName": "Electron POS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/dist/**",
+      "!**/.git/**",
+      "!**/.idea/**",
+      "!**/.vscode/**",
+      "!**/.github/**",
+      "!**/.DS_Store",
+      "!**/._*"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
