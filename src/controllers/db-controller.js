@@ -1,5 +1,7 @@
 const db = require('../db');
-const { ipcMain } = require('electron');
+const { ipcMain, dialog } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 // Helper to convert callbacks to promises
 const promisify = (dbMethod, ...args) => {
@@ -182,6 +184,124 @@ const setupDbHandlers = () => {
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, error: error.message };
+    }
+  });
+
+  // Database export/import handlers
+  ipcMain.handle('db:export', async (event) => {
+    try {
+      // Get the save file path from user
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Export Database',
+        defaultPath: path.join(process.env.HOME || process.env.USERPROFILE, 'Downloads', 'pos-export.json'),
+        buttonLabel: 'Export',
+        filters: [
+          { name: 'JSON Files', extensions: ['json'] }
+        ]
+      });
+
+      if (canceled) {
+        return { success: false, message: 'Export cancelled' };
+      }
+
+      // Get all data from all collections
+      const productsData = await promisify(db.products.find.bind(db.products), {});
+      const categoriesData = await promisify(db.categories.find.bind(db.categories), {});
+      const transactionsData = await promisify(db.transactions.find.bind(db.transactions), {});
+      const settingsData = await promisify(db.settings.find.bind(db.settings), {});
+      const usersData = await promisify(db.users.find.bind(db.users), {});
+
+      // Create export object
+      const exportData = {
+        metadata: {
+          version: '1.0',
+          exportDate: new Date().toISOString(),
+          collections: ['products', 'categories', 'transactions', 'settings', 'users']
+        },
+        products: productsData,
+        categories: categoriesData,
+        transactions: transactionsData,
+        settings: settingsData,
+        users: usersData
+      };
+
+      // Write to file
+      fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2));
+
+      return { success: true, message: 'Database exported successfully', path: filePath };
+    } catch (error) {
+      console.error('Error exporting database:', error);
+      return { success: false, message: `Export failed: ${error.message}` };
+    }
+  });
+
+  ipcMain.handle('db:import', async (event) => {
+    try {
+      // Get the file path from user
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: 'Import Database',
+        buttonLabel: 'Import',
+        filters: [
+          { name: 'JSON Files', extensions: ['json'] }
+        ],
+        properties: ['openFile']
+      });
+
+      if (canceled || filePaths.length === 0) {
+        return { success: false, message: 'Import cancelled' };
+      }
+
+      // Read the file
+      const fileData = fs.readFileSync(filePaths[0], 'utf8');
+      const importData = JSON.parse(fileData);
+
+      // Validate the import data
+      if (!importData.metadata || !importData.metadata.version) {
+        return { success: false, message: 'Invalid import file format' };
+      }
+
+      // Clear existing collections
+      await promisify(db.products.remove.bind(db.products), {}, { multi: true });
+      await promisify(db.categories.remove.bind(db.categories), {}, { multi: true });
+      await promisify(db.transactions.remove.bind(db.transactions), {}, { multi: true });
+      await promisify(db.settings.remove.bind(db.settings), {}, { multi: true });
+      await promisify(db.users.remove.bind(db.users), {}, { multi: true });
+
+      // Import data into collections
+      if (importData.products && importData.products.length > 0) {
+        for (const product of importData.products) {
+          await promisify(db.products.insert.bind(db.products), product);
+        }
+      }
+
+      if (importData.categories && importData.categories.length > 0) {
+        for (const category of importData.categories) {
+          await promisify(db.categories.insert.bind(db.categories), category);
+        }
+      }
+
+      if (importData.transactions && importData.transactions.length > 0) {
+        for (const transaction of importData.transactions) {
+          await promisify(db.transactions.insert.bind(db.transactions), transaction);
+        }
+      }
+
+      if (importData.settings && importData.settings.length > 0) {
+        for (const setting of importData.settings) {
+          await promisify(db.settings.insert.bind(db.settings), setting);
+        }
+      }
+
+      if (importData.users && importData.users.length > 0) {
+        for (const user of importData.users) {
+          await promisify(db.users.insert.bind(db.users), user);
+        }
+      }
+
+      return { success: true, message: 'Database imported successfully' };
+    } catch (error) {
+      console.error('Error importing database:', error);
+      return { success: false, message: `Import failed: ${error.message}` };
     }
   });
 };

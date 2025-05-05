@@ -74,15 +74,43 @@ const Settings = () => {
   };
 
   const handleExportDatabase = async () => {
-    // Implementation for database export functionality
-    // This would typically use a separate IPC handler for exporting the database
-    showNotification('Database export functionality to be implemented', 'info');
+    try {
+      const result = await window.api.database.exportDatabase();
+      
+      if (result.success) {
+        showNotification(`Database successfully exported to ${result.path}`, 'success');
+      } else {
+        showNotification(result.message || 'Export failed', 'error');
+      }
+    } catch (error) {
+      console.error('Error exporting database:', error);
+      showNotification('Export failed: An unexpected error occurred', 'error');
+    }
   };
 
   const handleImportDatabase = async () => {
-    // Implementation for database import functionality
-    // This would typically use a separate IPC handler for importing the database
-    showNotification('Database import functionality to be implemented', 'info');
+    // Ask for confirmation before proceeding
+    if (!window.confirm('Warning: Importing a database will overwrite all existing data. This action cannot be undone. Do you want to continue?')) {
+      return;
+    }
+    
+    try {
+      const result = await window.api.database.importDatabase();
+      
+      if (result.success) {
+        showNotification('Database imported successfully. The application will reload.', 'success');
+        
+        // Reload the application after a short delay to ensure the notification is seen
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        showNotification(result.message || 'Import failed', 'error');
+      }
+    } catch (error) {
+      console.error('Error importing database:', error);
+      showNotification('Import failed: An unexpected error occurred', 'error');
+    }
   };
 
   if (isLoading) {
