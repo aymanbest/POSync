@@ -113,6 +113,36 @@ const Settings = () => {
     }
   };
 
+  const handleResetDatabase = async () => {
+    // Ask for double confirmation before proceeding
+    if (!window.confirm('WARNING: This will permanently delete ALL your data including products, categories, and transactions. This action CANNOT be undone. Do you want to continue?')) {
+      return;
+    }
+    
+    // Second confirmation with specific text to prevent accidental resets
+    if (!window.confirm('Please confirm again: All your data will be permanently erased and the application will be reset to factory defaults.')) {
+      return;
+    }
+    
+    try {
+      const result = await window.api.database.resetDatabase();
+      
+      if (result.success) {
+        showNotification('Database has been reset to factory defaults. The application will reload.', 'success');
+        
+        // Reload the application after a short delay to ensure the notification is seen
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        showNotification(result.message || 'Reset failed', 'error');
+      }
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      showNotification('Reset failed: An unexpected error occurred', 'error');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -302,8 +332,7 @@ const Settings = () => {
                 <span className="text-red-500 font-medium"> Warning: This action cannot be undone.</span>
               </p>
               <button
-                onClick={() => window.confirm('Are you sure you want to reset all data? This cannot be undone.') && 
-                  showNotification('Reset functionality to be implemented', 'info')}
+                onClick={handleResetDatabase}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md"
               >
                 Reset All Data

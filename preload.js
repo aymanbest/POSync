@@ -17,7 +17,8 @@ contextBridge.exposeInMainWorld(
       updateCategory: (id, category) => ipcRenderer.invoke('db:updateCategory', id, category),
       deleteCategory: (id) => ipcRenderer.invoke('db:deleteCategory', id),
       exportDatabase: () => ipcRenderer.invoke('db:export'),
-      importDatabase: () => ipcRenderer.invoke('db:import')
+      importDatabase: () => ipcRenderer.invoke('db:import'),
+      resetDatabase: () => ipcRenderer.invoke('db:reset')
     },
     
     // Transaction operations

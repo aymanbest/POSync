@@ -304,6 +304,44 @@ const setupDbHandlers = () => {
       return { success: false, message: `Import failed: ${error.message}` };
     }
   });
+
+  // Reset database handler
+  ipcMain.handle('db:reset', async () => {
+    try {
+      // Clear all collections
+      await promisify(db.products.remove.bind(db.products), {}, { multi: true });
+      await promisify(db.categories.remove.bind(db.categories), {}, { multi: true });
+      await promisify(db.transactions.remove.bind(db.transactions), {}, { multi: true });
+      await promisify(db.settings.remove.bind(db.settings), {}, { multi: true });
+      await promisify(db.users.remove.bind(db.users), {}, { multi: true });
+
+      // Re-initialize default settings
+      await promisify(db.settings.insert.bind(db.settings), {
+        _id: 'app-settings',
+        businessName: 'My POS Store',
+        address: '123 Main St',
+        phone: '555-123-4567',
+        email: 'info@myposstore.com',
+        currency: 'USD',
+        taxRate: 7.5,
+        receiptFooter: 'Thank you for your business!',
+        createdAt: new Date()
+      });
+
+      // Re-initialize default admin user
+      await promisify(db.users.insert.bind(db.users), {
+        username: 'admin',
+        password: 'admin', // In production this should be hashed
+        role: 'admin',
+        createdAt: new Date()
+      });
+
+      return { success: true, message: 'All data has been reset to factory defaults' };
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      return { success: false, message: `Reset failed: ${error.message}` };
+    }
+  });
 };
 
 module.exports = {
