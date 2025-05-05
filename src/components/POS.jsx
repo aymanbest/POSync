@@ -66,7 +66,12 @@ const POS = () => {
     const product = products.find(p => p.barcode === barcode);
     
     if (product) {
-      addToCart(product);
+      // Check if product is in stock before adding
+      if (product.stock <= 0) {
+        showNotification(`${product.name} is out of stock`, 'error');
+      } else {
+        addToCart(product);
+      }
       e.target.barcode.value = '';
     } else {
       showNotification(`Product with barcode ${barcode} not found`, 'error');
@@ -74,10 +79,22 @@ const POS = () => {
   };
 
   const addToCart = (product) => {
+    // Prevent adding out of stock items
+    if (product.stock <= 0) {
+      showNotification(`${product.name} is out of stock`, 'error');
+      return;
+    }
+    
     setCart(currentCart => {
       const existingItem = currentCart.find(item => item._id === product._id);
       
       if (existingItem) {
+        // Check if we have enough stock for the increased quantity
+        if (existingItem.quantity + 1 > product.stock) {
+          showNotification(`Not enough stock available for ${product.name}`, 'error');
+          return currentCart;
+        }
+        
         return currentCart.map(item =>
           item._id === product._id
             ? { ...item, quantity: item.quantity + 1 }
@@ -92,6 +109,16 @@ const POS = () => {
   const updateCartItemQuantity = (productId, newQuantity) => {
     if (newQuantity <= 0) {
       removeFromCart(productId);
+      return;
+    }
+    
+    // Find the product to check stock
+    const product = products.find(p => p._id === productId);
+    if (!product) return;
+    
+    // Check if we have enough stock for the new quantity
+    if (newQuantity > product.stock) {
+      showNotification(`Not enough stock available for ${product.name}`, 'error');
       return;
     }
     
@@ -193,6 +220,16 @@ const POS = () => {
       
       // Save transaction
       const result = await window.api.transactions.createTransaction(transaction);
+      
+      // Update stock for each item in the cart
+      for (const item of cart) {
+        const updatedStock = item.stock - item.quantity;
+        await window.api.database.updateProduct(item._id, { stock: updatedStock });
+      }
+      
+      // Update products list with new stock values
+      const updatedProducts = await window.api.database.getProducts();
+      setProducts(updatedProducts);
       
       // Store transaction data for the receipt modal
       setCurrentTransaction({
@@ -339,7 +376,7 @@ const POS = () => {
             <div 
               key={product._id}
               onClick={() => addToCart(product)}
-              className="bg-white border border-gray-200 rounded-md p-2 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors"
+              className={`bg-white border ${product.stock <= 0 ? 'border-red-300 opacity-60' : 'border-gray-200'} rounded-md p-2 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors`}
             >
               <div className="text-center">
                 <div className="h-16 flex items-center justify-center">
@@ -360,6 +397,9 @@ const POS = () => {
                 </div>
                 <div className="text-sm text-gray-700 font-medium">
                   {formatCurrency(product.price)}
+                </div>
+                <div className={`text-xs mt-1 ${product.stock <= 0 ? 'text-red-500 font-bold' : product.stock < 5 ? 'text-orange-500' : 'text-green-600'}`}>
+                  {product.stock <= 0 ? 'Out of stock' : `Stock: ${product.stock}`}
                 </div>
               </div>
             </div>
