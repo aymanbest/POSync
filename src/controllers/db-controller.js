@@ -324,6 +324,9 @@ const setupDbHandlers = () => {
         email: 'info@myposstore.com',
         currency: 'MAD',
         taxRate: 7.5,
+        taxType: 'added',
+        taxName: 'Tax',
+        lowStockThreshold: 5,
         receiptFooter: 'Thank you for your business!',
         createdAt: new Date()
       });

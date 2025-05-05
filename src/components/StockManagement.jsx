@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const StockManagement = () => {
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stockItems, setStockItems] = useState([]);
@@ -22,6 +24,23 @@ const StockManagement = () => {
         setProducts(productsData);
         setCategories(categoriesData);
         setSettings(settingsData);
+        
+        // Check if there's a product in the navigation state to add
+        if (location.state?.productToAdd) {
+          const productToAdd = location.state.productToAdd;
+          const product = productsData.find(p => p._id === productToAdd._id);
+          
+          if (product) {
+            // Add product to stock items with a default quantity of 1
+            addToStockItems(product);
+            
+            // Set search term to help locate the product
+            setSearchTerm(product.name);
+            
+            // Highlight that this product has been added
+            showNotification(`${product.name} added to restock list`, 'success');
+          }
+        }
       } catch (error) {
         console.error('Error fetching initial data:', error);
         showNotification('Error loading data', 'error');
@@ -29,7 +48,7 @@ const StockManagement = () => {
     };
 
     fetchData();
-  }, []);
+  }, [location.state]);
 
   // Focus on barcode input initially
   useEffect(() => {
@@ -122,12 +141,20 @@ const StockManagement = () => {
     }
     
     setIsProcessing(true);
+    const lowStockThreshold = settings?.lowStockThreshold || 5;
+    const restoredItems = [];
     
     try {
       // Update each product's stock
       for (const item of stockItems) {
-        const newStock = (item.stock || 0) + item.quantityToAdd;
+        const currentStock = item.stock || 0;
+        const newStock = currentStock + item.quantityToAdd;
         await window.api.database.updateProduct(item._id, { stock: newStock });
+        
+        // Check if item was below threshold but is now above it
+        if (currentStock <= lowStockThreshold && newStock > lowStockThreshold) {
+          restoredItems.push(item.name);
+        }
       }
       
       // Refresh products list
@@ -137,6 +164,17 @@ const StockManagement = () => {
       // Clear stock items after successful update
       clearStockItems();
       showNotification('Stock updated successfully', 'success');
+      
+      // If items were restored above threshold, show a notification
+      if (restoredItems.length > 0) {
+        setTimeout(() => {
+          const itemNames = restoredItems.join(', ');
+          const message = restoredItems.length === 1
+            ? `${itemNames} is now back in healthy stock levels`
+            : `${itemNames} are now back in healthy stock levels`;
+          showNotification(message, 'success');
+        }, 4000); // Show after the success notification has disappeared
+      }
     } catch (error) {
       console.error('Stock update error:', error);
       showNotification('Error updating stock', 'error');
@@ -252,8 +290,14 @@ const StockManagement = () => {
                 <div className="text-sm text-gray-700 font-medium">
                   {formatCurrency(product.price)}
                 </div>
-                <div className="text-xs mt-1 font-medium">
-                  Current Stock: {product.stock || 0}
+                <div className={`text-xs mt-1 font-medium px-2 py-0.5 rounded-full inline-block ${
+                  product.stock <= 0 
+                    ? 'bg-red-600 text-white' 
+                    : product.stock <= (settings?.lowStockThreshold || 5) 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-green-600 text-white'
+                }`}>
+                  Stock: {product.stock || 0}
                 </div>
               </div>
             </div>

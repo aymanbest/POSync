@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import LowStockNotification from './LowStockNotification';
 
 const Navbar = ({ user, onLogout }) => {
   const location = useLocation();
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settingsData = await window.api.settings.getSettings();
+        setSettings(settingsData);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const navItems = [
     { path: '/', label: 'Dashboard' },
@@ -51,7 +66,10 @@ const Navbar = ({ user, onLogout }) => {
 
           <div className="flex items-center">
             <div className="ml-4 flex items-center md:ml-6">
-              <div className="relative">
+              {/* Low Stock Notification */}
+              {settings && <LowStockNotification settings={settings} />}
+              
+              <div className="relative ml-4">
                 <div className="flex items-center">
                   <span className="mr-2 text-sm">{user.username}</span>
                   <button
@@ -85,6 +103,12 @@ const Navbar = ({ user, onLogout }) => {
               {item.label}
             </NavLink>
           ))}
+          
+          {/* Mobile notifications */}
+          <div className="border-t border-gray-700 mt-2 pt-2 flex items-center px-3 py-2">
+            <span className="text-gray-300 text-sm mr-2">Notifications:</span>
+            {settings && <LowStockNotification settings={settings} />}
+          </div>
         </div>
       </div>
     </nav>

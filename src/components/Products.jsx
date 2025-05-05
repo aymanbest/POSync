@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 
 const Products = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +31,15 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Handle URL search query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchQuery = params.get('search');
+    if (searchQuery) {
+      setSearchTerm(searchQuery);
+    }
+  }, [location.search]);
 
   // Fetch products and categories on component mount
   useEffect(() => {
@@ -346,6 +357,16 @@ const Products = () => {
     }
   };
 
+  const handleManageStock = (product) => {
+    navigate('/stock-management', { state: { productToAdd: product } });
+  };
+
+  // Check if product has low stock
+  const isLowStock = (product) => {
+    const lowStockThreshold = settings?.lowStockThreshold || 5;
+    return product.stock !== undefined && product.stock <= lowStockThreshold && product.stock > 0;
+  };
+
   return (
     <div className="relative">
       {/* Notification */}
@@ -635,7 +656,7 @@ const Products = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {getPaginatedProducts().map(product => (
-                <tr key={product._id} className="hover:bg-gray-50">
+                <tr key={product._id} className={`hover:bg-gray-50 ${isLowStock(product) ? 'bg-yellow-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12 border rounded-md overflow-hidden bg-gray-50 flex items-center justify-center">
@@ -658,13 +679,19 @@ const Products = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {formatCurrency(product.price)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.stock !== undefined ? product.stock : 'N/A'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      product.stock <= 0 ? 'bg-red-600 text-white' : 
+                      isLowStock(product) ? 'bg-amber-500 text-white' : 
+                      'bg-green-600 text-white'
+                    }`}>
+                      {product.stock !== undefined ? product.stock : 'N/A'}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button
                       onClick={() => handleEdit(product)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      className="text-indigo-600 hover:text-indigo-900"
                     >
                       Edit
                     </button>
@@ -673,6 +700,12 @@ const Products = () => {
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
+                    </button>
+                    <button
+                      onClick={() => handleManageStock(product)}
+                      className="text-green-600 hover:text-green-900"
+                    >
+                      Stock
                     </button>
                   </td>
                 </tr>

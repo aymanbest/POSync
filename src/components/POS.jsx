@@ -248,16 +248,6 @@ const POS = () => {
       // Save transaction
       const result = await window.api.transactions.createTransaction(transaction);
       
-      // Update stock for each item in the cart
-      for (const item of cart) {
-        const updatedStock = item.stock - item.quantity;
-        await window.api.database.updateProduct(item._id, { stock: updatedStock });
-      }
-      
-      // Update products list with new stock values
-      const updatedProducts = await window.api.database.getProducts();
-      setProducts(updatedProducts);
-      
       // Store transaction data for the receipt modal
       setCurrentTransaction({
         ...transaction,
@@ -425,7 +415,13 @@ const POS = () => {
                 <div className="text-sm text-gray-700 font-medium">
                   {formatCurrency(product.price)}
                 </div>
-                <div className={`text-xs mt-1 ${product.stock <= 0 ? 'text-red-500 font-bold' : product.stock < 5 ? 'text-orange-500' : 'text-green-600'}`}>
+                <div className={`text-xs mt-1 ${
+                  product.stock <= 0 
+                    ? 'text-white bg-red-600 px-2 py-0.5 rounded-full inline-block' 
+                    : product.stock < (settings?.lowStockThreshold || 5) 
+                      ? 'text-white bg-amber-500 px-2 py-0.5 rounded-full inline-block' 
+                      : 'text-white bg-green-600 px-2 py-0.5 rounded-full inline-block'
+                }`}>
                   {product.stock <= 0 ? 'Out of stock' : `Stock: ${product.stock}`}
                 </div>
               </div>

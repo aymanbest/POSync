@@ -15,7 +15,8 @@ const Settings = () => {
     taxType: 'added', // 'added', 'included', or 'disabled'
     taxName: 'Tax',
     taxDescription: '',
-    receiptFooter: ''
+    receiptFooter: '',
+    lowStockThreshold: 5 // Default low stock threshold
   });
 
   // Fetch settings on component mount
@@ -37,7 +38,8 @@ const Settings = () => {
           taxType: settingsData.taxType || 'added',
           taxName: settingsData.taxName || 'Tax',
           taxDescription: settingsData.taxDescription || '',
-          receiptFooter: settingsData.receiptFooter || ''
+          receiptFooter: settingsData.receiptFooter || '',
+          lowStockThreshold: settingsData.lowStockThreshold || 5
         });
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -59,7 +61,9 @@ const Settings = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'taxRate' ? parseFloat(value) || 0 : value
+      [name]: name === 'taxRate' ? parseFloat(value) || 0 : 
+              name === 'lowStockThreshold' ? parseInt(value) || 0 : 
+              value
     }));
   };
 
@@ -252,6 +256,31 @@ const Settings = () => {
                   <option value="CNY">CNY (¥)</option>
                   <option value="INR">INR (₹)</option>
                 </select>
+              </div>
+              
+              {/* Inventory Settings */}
+              <div className="border-t pt-4">
+                <h3 className="text-md font-medium mb-3">Inventory Settings</h3>
+                
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Low Stock Threshold
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      name="lowStockThreshold"
+                      value={formData.lowStockThreshold}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="1"
+                      className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You'll receive notifications when product stock falls below this quantity
+                  </p>
+                </div>
               </div>
               
               {/* Tax Settings */}
