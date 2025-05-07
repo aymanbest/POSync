@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, Treemap
@@ -57,29 +57,58 @@ const StockReportTab = () => {
     fetchProductData();
   }, []);
 
-  // Process product data for display
-  const processProductData = (products) => {
-    // Filter and sort products based on current filters
-    let filteredProducts = [...products];
-    
-    // Apply stock filter
-    if (stockFilter === 'low') {
-      filteredProducts = filteredProducts.filter(p => p.stock > 0 && p.stock <= lowStockThreshold);
-    } else if (stockFilter === 'out') {
-      filteredProducts = filteredProducts.filter(p => p.stock === 0);
-    } else if (stockFilter === 'healthy') {
-      filteredProducts = filteredProducts.filter(p => p.stock > lowStockThreshold);
+  // Fetch product data on filter change
+  useEffect(() => {
+    const fetchProductData = async () => {
+      setIsLoading(true);
+      try {
+        // Get low stock threshold from settings if available
+        const settings = await window.api.settings.getSettings();
+        if (settings?.lowStockThreshold) {
+          setLowStockThreshold(settings.lowStockThreshold);
+        }
+        
+        // API call to fetch stock report with filtered products
+        const products = await window.api.database.getProductsStockReport(stockFilter);
+        
+        // Process data
+        const processed = processProductData(products);
+        setProductData(processed.products);
+        setCategoryData(processed.categories);
+        setSummaryData(processed.summary);
+      } catch (error) {
+        console.error('Error fetching product data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductData();
+  }, [stockFilter, lowStockThreshold, sortBy, processProductData]);
+
+  // Reapply sorting when sortBy changes
+  useEffect(() => {
+    if (productData.length > 0) {
+      // Just re-sort existing data without fetching again
+      const processed = processProductData(productData);
+      setProductData(processed.products);
     }
+  }, [sortBy, processProductData, productData]);
+
+  // Process product data for display using useCallback
+  const processProductData = useCallback((products) => {
+    // Products are already filtered by the API, just need to sort them
+    let processedProducts = [...products];
     
     // Apply sorting
     if (sortBy === 'name') {
-      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+      processedProducts.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'stock-asc') {
-      filteredProducts.sort((a, b) => a.stock - b.stock);
+      processedProducts.sort((a, b) => a.stock - b.stock);
     } else if (sortBy === 'stock-desc') {
-      filteredProducts.sort((a, b) => b.stock - a.stock);
+      processedProducts.sort((a, b) => b.stock - a.stock);
     } else if (sortBy === 'value-desc') {
-      filteredProducts.sort((a, b) => (b.stock * b.price) - (a.stock * a.price));
+      processedProducts.sort((a, b) => b.stockValue - a.stockValue);
     }
     
     // Process category data
@@ -108,7 +137,7 @@ const StockReportTab = () => {
     const estimatedValue = products.reduce((sum, p) => sum + ((p.stock || 0) * (p.price || 0)), 0);
     
     // Enhance product data with additional info
-    const enhancedProducts = filteredProducts.map(product => ({
+    const enhancedProducts = processedProducts.map(product => ({
       ...product,
       stockStatus: product.stock === 0 ? 'outOfStock' : 
                    product.stock <= lowStockThreshold ? 'lowStock' : 'inStock',
@@ -126,7 +155,7 @@ const StockReportTab = () => {
         estimatedValue
       }
     };
-  };
+  }, [lowStockThreshold, sortBy]);
 
   // Format currency
   const formatCurrency = (value) => {

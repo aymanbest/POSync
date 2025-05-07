@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { setupDbHandlers } = require('./src/controllers/db-controller');
 const { setupPrintHandlers } = require('./src/controllers/print-controller');
@@ -6,6 +6,22 @@ const { setupPrintHandlers } = require('./src/controllers/print-controller');
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
+}
+
+// Setup hot reload in development mode
+if (process.argv.includes('--dev')) {
+  require('electron-reload')(__dirname, {
+    electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+    hardResetMethod: 'exit',
+    // Watch these directories for changes
+    watched: [
+      path.join(__dirname, 'src'),
+      path.join(__dirname, 'index.html'),
+      path.join(__dirname, 'preload.js'),
+      path.join(__dirname, 'renderer.js'),
+      path.join(__dirname, 'dist'),
+    ]
+  });
 }
 
 let mainWindow;
@@ -19,8 +35,33 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // Add permissions for camera
+      permissions: ['camera'],
+      // Allow Web Workers
+      webSecurity: true
     }
+  });
+
+  // Set proper permissions for media access
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') {
+      // Grant camera access permission
+      return callback(true);
+    }
+    callback(false);
+  });
+
+  // Set Content Security Policy to allow Web Workers
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src blob: 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; media-src 'self' blob:;"
+        ]
+      }
+    });
   });
 
   // Load the index.html of the app.
@@ -35,6 +76,18 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', () => {
+  // Set default Content Security Policy for all sessions
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src blob: 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self'; media-src 'self' blob:;"
+        ]
+      }
+    });
+  });
+
   createWindow();
   
   // Set up database and print handlers

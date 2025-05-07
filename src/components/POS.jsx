@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReceiptModal from './POS/ReceiptModal';
+import BarcodeScanner from './BarcodeScanner';
 
 const POS = () => {
   const [products, setProducts] = useState([]);
@@ -19,6 +20,7 @@ const POS = () => {
   const [discount, setDiscount] = useState(0);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
@@ -55,6 +57,33 @@ const POS = () => {
   // Format currency based on settings
   const formatCurrency = (amount) => {
     return `${settings?.currency || 'MAD'} ${amount.toFixed(2)}`;
+  };
+
+  // Handle barcode detection from scanner
+  const handleBarcodeDetected = (barcode) => {
+    if (!barcode) return;
+    
+    const product = products.find(p => p.barcode === barcode);
+    
+    if (product) {
+      // Check if product is in stock before adding
+      if (product.stock <= 0) {
+        showNotification(`${product.name} is out of stock`, 'error');
+      } else {
+        addToCart(product);
+        showNotification(`Added ${product.name} to cart`, 'success');
+      }
+    } else {
+      showNotification(`Product with barcode ${barcode} not found`, 'error');
+    }
+    
+    // Close the scanner
+    setShowScanner(false);
+    
+    // Focus back on barcode input
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
   };
 
   const handleBarcodeSubmit = (e) => {
@@ -364,7 +393,19 @@ const POS = () => {
                   type="text"
                   placeholder="Scan barcode or enter product ID"
                   className="flex-1 border border-gray-300 p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoComplete="off"
                 />
+                <button 
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="bg-gray-100 text-gray-700 p-2 border-t border-b border-gray-300 hover:bg-gray-200"
+                  title="Scan with camera"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
                 <button 
                   type="submit"
                   className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600"
@@ -387,23 +428,23 @@ const POS = () => {
           </div>
           
           {/* Categories */}
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1 rounded-md text-sm ${
+              className={`px-3 py-1 rounded-full text-sm ${
                 selectedCategory === 'all' 
                   ? 'bg-blue-500 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              All
+              All Products
             </button>
             {categories.map(category => (
               <button
                 key={category._id}
                 onClick={() => setSelectedCategory(category._id)}
-                className={`px-3 py-1 rounded-md text-sm whitespace-nowrap ${
-                  selectedCategory === category._id 
+                className={`px-3 py-1 rounded-full text-sm ${
+                  selectedCategory === category._id
                     ? 'bg-blue-500 text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
@@ -658,10 +699,18 @@ const POS = () => {
           </div>
         </div>
       </div>
-
+      
+      {/* Barcode Scanner Modal */}
+      {showScanner && (
+        <BarcodeScanner 
+          onDetected={handleBarcodeDetected} 
+          onClose={() => setShowScanner(false)} 
+        />
+      )}
+      
       {/* Discount Modal */}
       {showDiscountModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-medium mb-4">Apply Discount</h3>
             

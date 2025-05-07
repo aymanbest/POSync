@@ -18,7 +18,12 @@ contextBridge.exposeInMainWorld(
       deleteCategory: (id) => ipcRenderer.invoke('db:deleteCategory', id),
       exportDatabase: () => ipcRenderer.invoke('db:export'),
       importDatabase: () => ipcRenderer.invoke('db:import'),
-      resetDatabase: () => ipcRenderer.invoke('db:reset')
+      resetDatabase: () => ipcRenderer.invoke('db:reset'),
+      // Report methods
+      getSalesByTimeFrame: (timeFrame) => ipcRenderer.invoke('db:getSalesByTimeFrame', timeFrame),
+      getTopSellingProducts: (timeFrame) => ipcRenderer.invoke('db:getTopSellingProducts', timeFrame),
+      getSalesByDateRange: (startDate, endDate) => ipcRenderer.invoke('db:getSalesByDateRange', startDate, endDate),
+      getProductsStockReport: (filter) => ipcRenderer.invoke('db:getProductsStockReport', filter)
     },
     
     // Transaction operations

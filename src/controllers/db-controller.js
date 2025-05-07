@@ -187,6 +187,184 @@ const setupDbHandlers = () => {
     }
   });
 
+  // Reports handlers
+  ipcMain.handle('db:getSalesByTimeFrame', async (event, timeFrame) => {
+    try {
+      // Get all transactions
+      const transactions = await promisify(db.transactions.find.bind(db.transactions), {});
+      
+      // Filter transactions based on time frame
+      const now = new Date();
+      let startDate;
+      
+      switch (timeFrame) {
+        case 'day':
+          // Today (from 00:00:00)
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          // This week (from Sunday)
+          const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - dayOfWeek);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          // This month (from 1st)
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          // This year (from Jan 1st)
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(0); // All time if invalid timeframe
+          break;
+      }
+      
+      // Filter transactions by date
+      const filteredTransactions = transactions.filter(tx => {
+        const txDate = new Date(tx.createdAt || tx.date);
+        return txDate >= startDate && txDate <= now;
+      });
+      
+      return filteredTransactions;
+    } catch (error) {
+      console.error(`Error fetching sales by time frame (${timeFrame}):`, error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:getTopSellingProducts', async (event, timeFrame) => {
+    try {
+      // First get all transactions
+      const transactions = await promisify(db.transactions.find.bind(db.transactions), {});
+      
+      // Filter transactions based on time frame
+      const now = new Date();
+      let startDate;
+      
+      switch (timeFrame) {
+        case 'day':
+          // Today (from 00:00:00)
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          // This week (from Sunday)
+          const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - dayOfWeek);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          // This month (from 1st)
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          // This year (from Jan 1st)
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(0); // All time if invalid timeframe
+          break;
+      }
+      
+      // Filter transactions by date
+      const sales = transactions.filter(tx => {
+        const txDate = new Date(tx.createdAt || tx.date);
+        return txDate >= startDate && txDate <= now;
+      });
+      
+      // Extract all items from all sales
+      const allItems = sales.flatMap(sale => sale.items || []);
+      
+      // Create a map to track product sales
+      const productMap = {};
+      
+      // Aggregate sales data by product
+      for (const item of allItems) {
+        const productId = item.productId;
+        
+        if (!productMap[productId]) {
+          productMap[productId] = {
+            productId,
+            name: item.name,
+            salesCount: 0,
+            revenue: 0
+          };
+        }
+        
+        productMap[productId].salesCount += item.quantity;
+        productMap[productId].revenue += item.total || (item.price * item.quantity);
+      }
+      
+      // Convert to array and sort by sales count in descending order
+      const topProducts = Object.values(productMap)
+        .sort((a, b) => b.salesCount - a.salesCount || b.revenue - a.revenue);
+      
+      return topProducts;
+    } catch (error) {
+      console.error(`Error fetching top selling products (${timeFrame}):`, error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:getSalesByDateRange', async (event, startDate, endDate) => {
+    try {
+      // Get all transactions
+      const transactions = await promisify(db.transactions.find.bind(db.transactions), {});
+      
+      // Convert string dates to Date objects
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      // Filter transactions by date range
+      const filteredTransactions = transactions.filter(tx => {
+        const txDate = new Date(tx.createdAt || tx.date);
+        return txDate >= start && txDate <= end;
+      });
+      
+      return filteredTransactions;
+    } catch (error) {
+      console.error(`Error fetching sales by date range (${startDate} to ${endDate}):`, error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:getProductsStockReport', async (event, filter) => {
+    try {
+      // Get all products and settings
+      const products = await promisify(db.products.find.bind(db.products), {});
+      const settings = await promisify(db.settings.findOne.bind(db.settings), { _id: 'app-settings' });
+      const lowStockThreshold = settings?.lowStockThreshold || 5;
+      
+      // Apply filters if specified
+      let filteredProducts = [...products];
+      
+      if (filter === 'low') {
+        filteredProducts = products.filter(p => p.stock > 0 && p.stock <= lowStockThreshold);
+      } else if (filter === 'out') {
+        filteredProducts = products.filter(p => p.stock <= 0);
+      } else if (filter === 'healthy') {
+        filteredProducts = products.filter(p => p.stock > lowStockThreshold);
+      }
+      
+      // Calculate total stock value for each product
+      const productsWithValue = filteredProducts.map(product => ({
+        ...product,
+        stockValue: product.stock * product.costPrice
+      }));
+      
+      return productsWithValue;
+    } catch (error) {
+      console.error(`Error fetching products stock report:`, error);
+      throw error;
+    }
+  });
+
   // Database export/import handlers
   ipcMain.handle('db:export', async (event) => {
     try {

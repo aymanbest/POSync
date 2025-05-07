@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import BarcodeScanner from './BarcodeScanner';
 
 const Products = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Products = () => {
   const fileInputRef = useRef(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -367,6 +369,41 @@ const Products = () => {
     return product.stock !== undefined && product.stock <= lowStockThreshold && product.stock > 0;
   };
 
+  // Handle barcode detection
+  const handleBarcodeDetected = (barcode) => {
+    if (!barcode || barcode.trim() === '') {
+      showNotification('Invalid barcode detected', 'error');
+      return;
+    }
+    
+    // Check if barcode already exists
+    const existingProduct = products.find(p => p.barcode === barcode);
+    if (existingProduct && formMode === 'add') {
+      showNotification(`Barcode ${barcode} already exists for product "${existingProduct.name}"`, 'error');
+      // Optional: Fill the form with the existing product data
+      setFormData({
+        ...formData,
+        barcode: barcode
+      });
+    } else {
+      // Set the barcode in the form
+      setFormData({
+        ...formData,
+        barcode: barcode
+      });
+      showNotification(`Barcode detected: ${barcode}`, 'success');
+    }
+    
+    // Close the scanner
+    setShowScanner(false);
+  };
+
+  // Make sure to close the scanner when the form is closed
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setShowScanner(false);
+  };
+
   return (
     <div className="relative">
       {/* Notification */}
@@ -456,7 +493,7 @@ const Products = () => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">{formMode === 'add' ? 'Add New Product' : 'Edit Product'}</h2>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={handleCloseForm}
                 className="text-gray-500 hover:text-gray-700"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -485,14 +522,27 @@ const Products = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Barcode*
                   </label>
-                  <input
-                    type="text"
-                    name="barcode"
-                    value={formData.barcode}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      name="barcode"
+                      value={formData.barcode}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowScanner(true)}
+                      className="border border-l-0 border-gray-300 bg-gray-100 p-2 rounded-r-md hover:bg-gray-200"
+                      title="Scan Barcode"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 
                 <div>
@@ -603,7 +653,7 @@ const Products = () => {
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={handleCloseForm}
                   className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
                 >
                   Cancel
@@ -836,6 +886,14 @@ const Products = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Barcode Scanner */}
+      {showScanner && (
+        <BarcodeScanner 
+          onDetected={handleBarcodeDetected} 
+          onClose={() => setShowScanner(false)} 
+        />
       )}
     </div>
   );
