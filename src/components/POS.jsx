@@ -818,7 +818,10 @@ const POS = () => {
                 <IconX size={24} />
               </button>
             </div>
-            <BarcodeScanner onDetected={handleBarcodeDetected} />
+            <BarcodeScanner 
+              onDetected={handleBarcodeDetected} 
+              onClose={() => setShowScanner(false)}
+            />
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import BarcodeScanner from './BarcodeScanner';
 
 const StockManagement = () => {
   const location = useLocation();
@@ -12,6 +13,7 @@ const StockManagement = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
   const barcodeInputRef = useRef(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
@@ -65,6 +67,28 @@ const StockManagement = () => {
   // Format currency based on settings
   const formatCurrency = (amount) => {
     return `${settings?.currency || 'MAD'} ${amount.toFixed(2)}`;
+  };
+
+  // Handle barcode detection from scanner
+  const handleBarcodeDetected = (barcode) => {
+    if (!barcode) return;
+    
+    const product = products.find(p => p.barcode === barcode);
+    
+    if (product) {
+      addToStockItems(product);
+      showNotification(`Added ${product.name} to restock list`, 'success');
+    } else {
+      showNotification(`Product with barcode ${barcode} not found`, 'error');
+    }
+    
+    // Close the scanner
+    setShowScanner(false);
+    
+    // Focus back on barcode input
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
   };
 
   const handleBarcodeSubmit = (e) => {
@@ -213,6 +237,15 @@ const StockManagement = () => {
                   placeholder="Scan barcode or enter product ID"
                   className="flex-1 border border-gray-300 dark:border-dark-500 p-2 rounded-l-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 />
+                <button 
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white p-2 transition-colors duration-150"
+                >
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1zM13 12a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1v-3a1 1 0 00-1-1h-3zm1 2v1h1v-1h-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
                 <button 
                   type="submit"
                   className="bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white p-2 rounded-r-md transition-colors duration-150"
@@ -393,6 +426,29 @@ const StockManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Barcode Scanner Modal */}
+      {showScanner && (
+        <div className="fixed inset-0 bg-dark-900/75 flex items-center justify-center z-40 animate-fade-in">
+          <div className="bg-white dark:bg-dark-700 rounded-xl shadow-hard dark:shadow-xl max-w-md w-full p-6 animate-slide-up">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-xl font-semibold text-dark-800 dark:text-white">Scan Barcode</h3>
+              <button
+                onClick={() => setShowScanner(false)}
+                className="text-dark-400 dark:text-dark-300 hover:text-dark-600 dark:hover:text-dark-100 focus:outline-none transition-colors duration-150"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <BarcodeScanner 
+              onDetected={handleBarcodeDetected} 
+              onClose={() => setShowScanner(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
