@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, screen } = require('electron');
 const path = require('path');
 const { setupDbHandlers } = require('./src/controllers/db-controller');
 const { setupPrintHandlers } = require('./src/controllers/print-controller');
@@ -27,10 +27,19 @@ if (process.argv.includes('--dev')) {
 let mainWindow;
 
 function createWindow() {
+  // Get the screen dimensions
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: Math.min(1400, width * 0.9),
+    height: Math.min(900, height * 0.9),
+    minWidth: 1000,
+    minHeight: 700,
+    frame: false, // Frameless window
+    titleBarStyle: 'hidden',
+    transparent: false,
+    backgroundColor: '#ffffff',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -93,6 +102,25 @@ app.on('ready', () => {
   // Set up database and print handlers
   setupDbHandlers();
   setupPrintHandlers();
+  
+  // Handle window control events from renderer
+  ipcMain.on('window:minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+  
+  ipcMain.on('window:maximize', () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+  
+  ipcMain.on('window:close', () => {
+    if (mainWindow) mainWindow.close();
+  });
 });
 
 // Quit when all windows are closed, except on macOS.

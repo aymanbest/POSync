@@ -28,21 +28,26 @@ const Reports = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Reports & Analytics</h1>
-      
-      {/* Tabs Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <div className="flex -mb-px">
+    <div className="flex flex-col h-full bg-gray-100 dark:bg-dark-800 p-6 transition-colors duration-200">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-dark-800 dark:text-white">Reports</h1>
+        <p className="text-gray-500 dark:text-dark-300">View and analyze your business performance</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-6 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
+        <div className="flex border-b border-gray-200 dark:border-dark-600">
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              className={`flex items-center px-6 py-3 text-sm font-medium focus:outline-none transition-colors duration-150 whitespace-nowrap
+                ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-dark-600'
+                }
+              `}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center py-3 px-4 border-b-2 font-medium text-sm transition-colors duration-200 ease-in-out ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
             >
               <i className={`fas fa-${tab.icon} mr-2`}></i>
               {tab.label}
@@ -50,9 +55,9 @@ const Reports = () => {
           ))}
         </div>
       </div>
-      
-      {/* Tab Content */}
-      <div className="bg-white rounded-lg shadow p-6">
+
+      {/* Content Area */}
+      <div className="flex-grow bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 overflow-auto transition-colors duration-200">
         {renderTabContent()}
       </div>
     </div>

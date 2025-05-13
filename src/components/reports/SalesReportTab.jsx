@@ -126,15 +126,15 @@ const SalesReportTab = () => {
   };
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Sales Report</h2>
+        <h2 className="text-xl font-semibold text-dark-800 dark:text-white">Sales Report</h2>
         
         {/* Time frame selection */}
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Time Frame:</span>
+          <span className="text-sm text-dark-500 dark:text-dark-300">Time Frame:</span>
           <select 
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="border border-gray-300 dark:border-dark-500 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors duration-150"
             value={timeFrame}
             onChange={(e) => setTimeFrame(e.target.value)}
           >
@@ -153,40 +153,49 @@ const SalesReportTab = () => {
       
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-          <span className="ml-3 text-gray-500">Loading data...</span>
+          <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <span className="ml-4 text-dark-500 dark:text-dark-300">Loading data...</span>
         </div>
       ) : (
         <>
           {/* Summary Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-500 mb-1">Total Sales</div>
-              <div className="text-2xl font-bold text-gray-800">{totalSales}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Total Sales</div>
+              <div className="text-2xl font-bold text-dark-800 dark:text-white">{totalSales}</div>
             </div>
-            <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4 shadow-sm">
-              <div className="text-sm font-medium text-gray-500 mb-1">Total Revenue</div>
-              <div className="text-2xl font-bold text-gray-800">{formatCurrency(totalRevenue)}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Total Revenue</div>
+              <div className="text-2xl font-bold text-dark-800 dark:text-white">{formatCurrency(totalRevenue)}</div>
             </div>
           </div>
           
           {/* Sales Bar Chart */}
           <div className="mb-8">
-            <h3 className="text-md font-medium text-gray-700 mb-4">Sales Over Time</h3>
-            <div className="h-80 w-full border border-gray-200 rounded-lg p-4 bg-white">
+            <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Sales Over Time</h3>
+            <div className="h-80 w-full border border-gray-200 dark:border-dark-600 rounded-lg p-4 bg-white dark:bg-dark-700 shadow-soft dark:shadow-none transition-colors duration-200">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={salesData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.2} />
+                  <XAxis dataKey="name" stroke="#6B7280" />
                   <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                  <Tooltip formatter={(value, name) => {
-                    if (name === 'revenue') return formatCurrency(value);
-                    return value;
-                  }} />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'revenue') return formatCurrency(value);
+                      return value;
+                    }}
+                    contentStyle={{
+                      backgroundColor: 'var(--color-dark-700, #1f2937)',
+                      borderColor: 'var(--color-dark-600, #374151)',
+                      color: 'var(--color-white, #ffffff)'
+                    }}
+                  />
                   <Legend />
                   <Bar yAxisId="left" dataKey="sales" name="Number of Sales" fill="#8884d8" />
                   <Bar yAxisId="right" dataKey="revenue" name="Revenue" fill="#82ca9d" />
@@ -197,10 +206,10 @@ const SalesReportTab = () => {
           
           {/* Top Products */}
           <div>
-            <h3 className="text-md font-medium text-gray-700 mb-4">Top Selling Products</h3>
+            <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Top Selling Products</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Pie Chart */}
-              <div className="h-80 border border-gray-200 rounded-lg p-4 bg-white">
+              <div className="h-80 border border-gray-200 dark:border-dark-600 rounded-lg p-4 bg-white dark:bg-dark-700 shadow-soft dark:shadow-none transition-colors duration-200">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -217,27 +226,33 @@ const SalesReportTab = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value, name, props) => [value, props.payload.name]} />
+                    <Tooltip formatter={(value, name, props) => [value, props.payload.name]} 
+                      contentStyle={{
+                        backgroundColor: 'var(--color-dark-700, #1f2937)',
+                        borderColor: 'var(--color-dark-600, #374151)',
+                        color: 'var(--color-white, #ffffff)'
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               
               {/* Products List */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+              <div className="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden shadow-soft dark:shadow-none">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+                  <thead className="bg-gray-50 dark:bg-dark-600">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units Sold</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Product</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Units Sold</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Revenue</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
                     {topProducts.map((product, index) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.salesCount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(product.revenue)}</td>
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white dark:bg-dark-700' : 'bg-gray-50 dark:bg-dark-600'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">{product.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.salesCount}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{formatCurrency(product.revenue)}</td>
                       </tr>
                     ))}
                   </tbody>

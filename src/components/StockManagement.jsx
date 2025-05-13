@@ -184,7 +184,7 @@ const StockManagement = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
       {/* Notification */}
       {notification && (
         <div 
@@ -198,8 +198,8 @@ const StockManagement = () => {
       )}
       
       {/* Product Selection */}
-      <div className="md:col-span-2 bg-white rounded-lg shadow p-4">
-        <h1 className="text-2xl font-bold mb-4">Stock Management</h1>
+      <div className="md:col-span-2 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-4 transition-colors duration-200">
+        <h1 className="text-2xl font-bold mb-4 text-dark-800 dark:text-white">Stock Management</h1>
         
         <div className="mb-4">
           <div className="flex flex-col md:flex-row gap-2 mb-4">
@@ -211,11 +211,11 @@ const StockManagement = () => {
                   name="barcode"
                   type="text"
                   placeholder="Scan barcode or enter product ID"
-                  className="flex-1 border border-gray-300 p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-gray-300 dark:border-dark-500 p-2 rounded-l-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 />
                 <button 
                   type="submit"
-                  className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600"
+                  className="bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white p-2 rounded-r-md transition-colors duration-150"
                 >
                   Add
                 </button>
@@ -229,7 +229,7 @@ const StockManagement = () => {
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
               />
             </div>
           </div>
@@ -240,9 +240,9 @@ const StockManagement = () => {
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1 rounded-md text-sm ${
                 selectedCategory === 'all' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-gray-200 dark:bg-dark-600 text-gray-700 dark:text-dark-200 hover:bg-gray-300 dark:hover:bg-dark-500'
+              } transition-colors duration-150`}
             >
               All
             </button>
@@ -252,9 +252,9 @@ const StockManagement = () => {
                 onClick={() => setSelectedCategory(category._id)}
                 className={`px-3 py-1 rounded-md text-sm whitespace-nowrap ${
                   selectedCategory === category._id 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                    ? 'bg-primary-500 text-white' 
+                    : 'bg-gray-200 dark:bg-dark-600 text-gray-700 dark:text-dark-200 hover:bg-gray-300 dark:hover:bg-dark-500'
+                } transition-colors duration-150`}
               >
                 {category.name}
               </button>
@@ -268,7 +268,7 @@ const StockManagement = () => {
             <div 
               key={product._id}
               onClick={() => addToStockItems(product)}
-              className="bg-white border border-gray-200 rounded-md p-2 cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-colors"
+              className="bg-white dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-md p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-600 hover:border-primary-300 dark:hover:border-primary-500 transition-colors duration-150"
             >
               <div className="text-center">
                 <div className="h-16 flex items-center justify-center">
@@ -279,15 +279,15 @@ const StockManagement = () => {
                       className="max-h-full max-w-full object-contain" 
                     />
                   ) : (
-                    <div className="bg-gray-200 w-12 h-12 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500 text-xs">{product.name.slice(0, 2).toUpperCase()}</span>
+                    <div className="bg-gray-200 dark:bg-dark-500 w-12 h-12 rounded-full flex items-center justify-center">
+                      <span className="text-gray-500 dark:text-dark-300 text-xs">{product.name.slice(0, 2).toUpperCase()}</span>
                     </div>
                   )}
                 </div>
-                <div className="mt-2 text-sm font-medium truncate" title={product.name}>
+                <div className="mt-2 text-sm font-medium truncate text-dark-800 dark:text-white" title={product.name}>
                   {product.name}
                 </div>
-                <div className="text-sm text-gray-700 font-medium">
+                <div className="text-sm text-primary-600 dark:text-primary-400 font-medium">
                   {formatCurrency(product.price)}
                 </div>
                 <div className={`text-xs mt-1 font-medium px-2 py-0.5 rounded-full inline-block ${
@@ -306,14 +306,14 @@ const StockManagement = () => {
       </div>
       
       {/* Stock Items */}
-      <div className="bg-white rounded-lg shadow p-4 h-[calc(100vh-10rem)] flex flex-col">
-        <h2 className="text-lg font-medium mb-3">Items to Restock</h2>
+      <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-4 h-[calc(100vh-10rem)] flex flex-col transition-colors duration-200">
+        <h2 className="text-lg font-medium mb-3 text-dark-800 dark:text-white">Items to Restock</h2>
         
         {/* Stock Items List */}
         <div className="flex-1 overflow-y-auto mb-4">
           {stockItems.length === 0 ? (
-            <div className="text-center text-gray-500 py-6">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center text-gray-500 dark:text-dark-300 py-6">
+              <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
               <p className="mt-2">No items added</p>
@@ -322,35 +322,35 @@ const StockManagement = () => {
           ) : (
             <div className="space-y-3">
               {stockItems.map(item => (
-                <div key={item._id} className="flex justify-between items-center border-b pb-2">
+                <div key={item._id} className="flex justify-between items-center border-b border-gray-200 dark:border-dark-600 pb-2">
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="font-medium text-dark-800 dark:text-white">{item.name}</div>
+                    <div className="text-xs text-gray-600 dark:text-dark-300">
                       Current stock: {item.stock || 0}
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <div className="text-xs font-medium mr-2 text-gray-500">
+                    <div className="text-xs font-medium mr-2 text-gray-500 dark:text-dark-300">
                       Add:
                     </div>
-                    <div className="flex items-center border rounded">
+                    <div className="flex items-center border rounded border-gray-200 dark:border-dark-500">
                       <button 
                         onClick={() => updateStockItemQuantity(item._id, item.quantityToAdd - 1)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                        className="px-2 py-1 text-gray-600 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors duration-150"
                       >
                         -
                       </button>
-                      <span className="px-2">{item.quantityToAdd}</span>
+                      <span className="px-2 text-dark-800 dark:text-white">{item.quantityToAdd}</span>
                       <button 
                         onClick={() => updateStockItemQuantity(item._id, item.quantityToAdd + 1)}
-                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
+                        className="px-2 py-1 text-gray-600 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors duration-150"
                       >
                         +
                       </button>
                     </div>
                     <button 
                       onClick={() => removeFromStockItems(item._id)}
-                      className="ml-2 text-red-500 hover:text-red-700"
+                      className="ml-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-150"
                     >
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -364,8 +364,8 @@ const StockManagement = () => {
         </div>
         
         {/* Summary */}
-        <div className="border-t pt-3">
-          <div className="flex justify-between text-lg font-bold mb-3">
+        <div className="border-t border-gray-200 dark:border-dark-600 pt-3">
+          <div className="flex justify-between text-lg font-bold mb-3 text-dark-800 dark:text-white">
             <span>Total Items:</span>
             <span>{stockItems.length}</span>
           </div>
@@ -375,7 +375,7 @@ const StockManagement = () => {
             <button
               onClick={clearStockItems}
               disabled={stockItems.length === 0 || isProcessing}
-              className={`flex-1 py-2 rounded-md text-white bg-red-500 hover:bg-red-600 ${
+              className={`flex-1 py-2 rounded-md text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition-colors duration-150 ${
                 (stockItems.length === 0 || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -384,7 +384,7 @@ const StockManagement = () => {
             <button
               onClick={handleUpdateStock}
               disabled={stockItems.length === 0 || isProcessing}
-              className={`flex-1 py-2 rounded-md text-white bg-green-500 hover:bg-green-600 ${
+              className={`flex-1 py-2 rounded-md text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 transition-colors duration-150 ${
                 (stockItems.length === 0 || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >

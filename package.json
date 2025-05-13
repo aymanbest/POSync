@@ -5,10 +5,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "concurrently \"webpack --config webpack.config.js --watch\" \"electron . --dev\"",
+    "dev": "concurrently \"webpack --config webpack.config.js --watch\" \"npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css --watch\" \"electron . --dev\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build-react && electron-builder",
     "build-react": "webpack --config webpack.config.js",
+    "build-css": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css",
     "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css"
   },
   "keywords": [
@@ -30,6 +31,7 @@
     "quagga": "^0.12.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^6.10.0",
     "recharts": "^2.15.3",
     "tailwindcss": "^3.3.0"

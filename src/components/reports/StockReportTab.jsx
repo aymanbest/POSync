@@ -196,16 +196,16 @@ const StockReportTab = () => {
   };
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-800">Stock Products Report</h2>
+        <h2 className="text-xl font-semibold text-dark-800 dark:text-white">Stock Products Report</h2>
         
         <div className="flex flex-wrap items-center gap-3">
           {/* Filters */}
           <div className="flex items-center">
-            <label className="text-sm text-gray-500 mr-2">Status:</label>
+            <label className="text-sm text-dark-500 dark:text-dark-300 mr-2">Status:</label>
             <select 
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 dark:border-dark-500 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors duration-150"
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value)}
             >
@@ -217,9 +217,9 @@ const StockReportTab = () => {
           </div>
           
           <div className="flex items-center">
-            <label className="text-sm text-gray-500 mr-2">Sort By:</label>
+            <label className="text-sm text-dark-500 dark:text-dark-300 mr-2">Sort By:</label>
             <select 
-              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 dark:border-dark-500 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-colors duration-150"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -239,40 +239,42 @@ const StockReportTab = () => {
       
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-          <span className="ml-3 text-gray-500">Loading data...</span>
+          <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <span className="ml-4 text-dark-500 dark:text-dark-300">Loading data...</span>
         </div>
       ) : (
         <>
           {/* Summary Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <div className="text-sm font-medium text-gray-500 mb-1">Total Products</div>
-              <div className="text-2xl font-bold text-gray-800">{summaryData.totalProducts}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Total Products</div>
+              <div className="text-2xl font-bold text-dark-800 dark:text-white">{summaryData.totalProducts}</div>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <div className="text-sm font-medium text-gray-500 mb-1">Total Stock Quantity</div>
-              <div className="text-2xl font-bold text-gray-800">{summaryData.totalStock}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Total Stock Quantity</div>
+              <div className="text-2xl font-bold text-dark-800 dark:text-white">{summaryData.totalStock}</div>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <div className="text-sm font-medium text-gray-500 mb-1">Low Stock Items</div>
-              <div className="text-2xl font-bold text-yellow-500">{summaryData.lowStockCount}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Low Stock Items</div>
+              <div className="text-2xl font-bold text-yellow-500 dark:text-yellow-400">{summaryData.lowStockCount}</div>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <div className="text-sm font-medium text-gray-500 mb-1">Out of Stock</div>
-              <div className="text-2xl font-bold text-red-500">{summaryData.outOfStockCount}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Out of Stock</div>
+              <div className="text-2xl font-bold text-red-500 dark:text-red-400">{summaryData.outOfStockCount}</div>
             </div>
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <div className="text-sm font-medium text-gray-500 mb-1">Inventory Value</div>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(summaryData.estimatedValue)}</div>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <div className="text-sm font-medium text-dark-500 dark:text-dark-300 mb-1">Inventory Value</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(summaryData.estimatedValue)}</div>
             </div>
           </div>
           
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Stock Status Distribution */}
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <h3 className="text-md font-medium text-gray-700 mb-4">Stock Status Distribution</h3>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Stock Status Distribution</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -306,8 +308,8 @@ const StockReportTab = () => {
             </div>
             
             {/* Category Distribution */}
-            <div className="bg-white rounded-lg p-4 shadow border border-gray-200">
-              <h3 className="text-md font-medium text-gray-700 mb-4">Category Stock Value</h3>
+            <div className="bg-white dark:bg-dark-700 rounded-lg p-4 shadow-soft dark:shadow-none border border-gray-200 dark:border-dark-600 transition-colors duration-200">
+              <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Category Stock Value</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <Treemap
@@ -323,7 +325,7 @@ const StockReportTab = () => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-white p-2 border border-gray-200 shadow-md rounded">
+                            <div className="bg-white dark:bg-dark-700 p-2 border border-gray-200 dark:border-dark-600 shadow-md rounded text-dark-800 dark:text-white">
                               <p className="font-medium">{data.name}</p>
                               <p className="text-sm">Products: {data.productCount}</p>
                               <p className="text-sm">Stock: {data.stockCount} units</p>
@@ -342,26 +344,34 @@ const StockReportTab = () => {
           
           {/* Stock Level Chart */}
           <div className="mb-8">
-            <h3 className="text-md font-medium text-gray-700 mb-4">Top 15 Products by Inventory Value</h3>
-            <div className="h-80 w-full border border-gray-200 rounded-lg p-4 bg-white">
+            <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Top 15 Products by Inventory Value</h3>
+            <div className="h-80 w-full border border-gray-200 dark:border-dark-600 rounded-lg p-4 bg-white dark:bg-dark-700 shadow-soft dark:shadow-none transition-colors duration-200">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={productData.slice(0, 15).sort((a, b) => b.stockValue - a.stockValue)}
                   layout="vertical"
                   margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.2} />
+                  <XAxis type="number" stroke="#6B7280" />
                   <YAxis 
                     type="category" 
                     dataKey="name" 
                     width={100}
                     tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                    stroke="#6B7280"
                   />
-                  <Tooltip formatter={(value, name, props) => {
-                    if (name === 'stockValue') return formatCurrency(value);
-                    return value;
-                  }} />
+                  <Tooltip 
+                    formatter={(value, name, props) => {
+                      if (name === 'stockValue') return formatCurrency(value);
+                      return value;
+                    }}
+                    contentStyle={{
+                      backgroundColor: 'rgb(var(--color-dark-700))',
+                      borderColor: 'rgb(var(--color-dark-600))',
+                      color: 'rgb(var(--color-white))'
+                    }}
+                  />
                   <Legend />
                   <Bar 
                     dataKey="stockValue" 
@@ -376,31 +386,31 @@ const StockReportTab = () => {
           
           {/* Product Table */}
           <div>
-            <h3 className="text-md font-medium text-gray-700 mb-4">Product Inventory List</h3>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <h3 className="text-md font-medium text-dark-700 dark:text-dark-100 mb-4">Product Inventory List</h3>
+            <div className="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden shadow-soft dark:shadow-none">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+                  <thead className="bg-gray-50 dark:bg-dark-600">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Product</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Value</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
                     {productData.map((product, index) => (
-                      <tr key={product._id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category || 'Uncategorized'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock || 0}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(product.stockValue)}</td>
+                      <tr key={product._id || index} className={index % 2 === 0 ? 'bg-white dark:bg-dark-700' : 'bg-gray-50 dark:bg-dark-600'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">{product.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.category || 'Uncategorized'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.stock || 0}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{formatCurrency(product.stockValue)}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            ${product.stockStatus === 'outOfStock' ? 'bg-red-100 text-red-800' : 
-                              product.stockStatus === 'lowStock' ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-green-100 text-green-800'}`}>
+                            ${product.stockStatus === 'outOfStock' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' : 
+                              product.stockStatus === 'lowStock' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 
+                              'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'} transition-colors duration-150`}>
                             {getStockStatusText(product.stockStatus)}
                           </span>
                         </td>

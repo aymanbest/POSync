@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
   <title>Electron POS</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <!-- Application CSS -->
   <link rel="stylesheet" href="./assets/css/tailwind.output.css">
   <link rel="stylesheet" href="./assets/css/styles.css">
 </head>
-<body>
-  <div id="app"></div>
+<body class="bg-gray-50 dark:bg-dark-800 text-dark-900 dark:text-white">
+  <div id="app" class="h-screen flex flex-col"></div>
   <script src="./dist/bundle.js"></script>
 </body>
 </html> 

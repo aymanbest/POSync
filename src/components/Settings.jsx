@@ -155,15 +155,19 @@ const Settings = () => {
 
   if (isLoading) {
     return (
-      <div className="text-center py-8">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="mt-2 text-gray-500">Loading settings...</p>
+      <div className="flex items-center justify-center h-full py-8">
+        <div className="animate-pulse-slow text-center">
+          <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-gray-500 dark:text-dark-300">Loading settings...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative animate-fade-in">
       {/* Notification */}
       {notification && (
         <div 
@@ -176,16 +180,16 @@ const Settings = () => {
         </div>
       )}
       
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold mb-6 text-dark-800 dark:text-white">Settings</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Business Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium mb-4">Business Information</h2>
+        <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+          <h2 className="text-lg font-medium mb-4 text-dark-800 dark:text-white">Business Information</h2>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Business Name
                 </label>
                 <input
@@ -193,11 +197,11 @@ const Settings = () => {
                   name="businessName"
                   value={formData.businessName}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Address
                 </label>
                 <textarea
@@ -205,11 +209,11 @@ const Settings = () => {
                   value={formData.address}
                   onChange={handleInputChange}
                   rows="2"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 ></textarea>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Phone
                 </label>
                 <input
@@ -217,11 +221,11 @@ const Settings = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Email
                 </label>
                 <input
@@ -229,22 +233,22 @@ const Settings = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 />
               </div>
             </div>
             
-            <h2 className="text-lg font-medium mt-6 mb-4">Financial Settings</h2>
+            <h2 className="text-lg font-medium mt-6 mb-4 text-dark-800 dark:text-white">Financial Settings</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Currency
                 </label>
                 <select
                   name="currency"
                   value={formData.currency}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 >
                   <option value="MAD">MAD (DH)</option>
                   <option value="USD">USD ($)</option>
@@ -259,11 +263,11 @@ const Settings = () => {
               </div>
               
               {/* Inventory Settings */}
-              <div className="border-t pt-4">
-                <h3 className="text-md font-medium mb-3">Inventory Settings</h3>
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
+                <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">Inventory Settings</h3>
                 
                 <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                     Low Stock Threshold
                   </label>
                   <div className="flex items-center">
@@ -274,34 +278,34 @@ const Settings = () => {
                       onChange={handleInputChange}
                       min="0"
                       step="1"
-                      className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-1">
                     You'll receive notifications when product stock falls below this quantity
                   </p>
                 </div>
               </div>
               
               {/* Tax Settings */}
-              <div className="border-t pt-4">
-                <h3 className="text-md font-medium mb-3">Tax Configuration</h3>
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
+                <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">Tax Configuration</h3>
                 
                 <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                     Tax Type
                   </label>
                   <select
                     name="taxType"
                     value={formData.taxType}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                   >
                     <option value="added">Added to Price</option>
                     <option value="included">Included in Price</option>
                     <option value="disabled">Disabled</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-1">
                     {formData.taxType === 'added' 
                       ? 'Tax is calculated on top of product prices'
                       : formData.taxType === 'included'
@@ -313,7 +317,7 @@ const Settings = () => {
                 {formData.taxType !== 'disabled' && (
                   <>
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                         Tax Name
                       </label>
                       <input
@@ -322,12 +326,12 @@ const Settings = () => {
                         value={formData.taxName}
                         onChange={handleInputChange}
                         placeholder="VAT, GST, Sales Tax, etc."
-                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                       />
                     </div>
                     
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                         Tax Rate (%)
                       </label>
                       <input
@@ -338,12 +342,12 @@ const Settings = () => {
                         step="0.01"
                         min="0"
                         max="100"
-                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                         Tax Description (Optional)
                       </label>
                       <textarea
@@ -352,7 +356,7 @@ const Settings = () => {
                         onChange={handleInputChange}
                         rows="2"
                         placeholder="Tax registration number or other details"
-                        className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                       ></textarea>
                     </div>
                   </>
@@ -360,10 +364,10 @@ const Settings = () => {
               </div>
             </div>
             
-            <h2 className="text-lg font-medium mt-6 mb-4">Receipt Settings</h2>
+            <h2 className="text-lg font-medium mt-6 mb-4 text-dark-800 dark:text-white">Receipt Settings</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                   Receipt Footer
                 </label>
                 <textarea
@@ -372,7 +376,7 @@ const Settings = () => {
                   onChange={handleInputChange}
                   rows="2"
                   placeholder="Thank you for your business!"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                 ></textarea>
               </div>
             </div>
@@ -381,7 +385,7 @@ const Settings = () => {
               <button
                 type="submit"
                 disabled={isSaving}
-                className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md ${
+                className={`w-full bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 ${
                   isSaving ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
@@ -392,45 +396,45 @@ const Settings = () => {
         </div>
         
         {/* Database Management */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium mb-4">Database Management</h2>
+        <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+          <h2 className="text-lg font-medium mb-4 text-dark-800 dark:text-white">Database Management</h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-md font-medium mb-2">Backup Database</h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Backup Database</h3>
+              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
                 Export your database to a file that can be used to restore your data.
               </p>
               <button
                 onClick={handleExportDatabase}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md"
+                className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
               >
                 Export Database
               </button>
             </div>
             
-            <div className="pt-4 border-t">
-              <h3 className="text-md font-medium mb-2">Restore Database</h3>
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="pt-4 border-t border-gray-200 dark:border-dark-500">
+              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Restore Database</h3>
+              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
                 Import a previously exported database file.
-                <span className="text-red-500 font-medium"> Warning: This will overwrite your current data.</span>
+                <span className="text-red-500 dark:text-red-400 font-medium"> Warning: This will overwrite your current data.</span>
               </p>
               <button
                 onClick={handleImportDatabase}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-md"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
               >
                 Import Database
               </button>
             </div>
             
-            <div className="pt-4 border-t">
-              <h3 className="text-md font-medium mb-2">Advanced</h3>
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="pt-4 border-t border-gray-200 dark:border-dark-500">
+              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Advanced</h3>
+              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
                 Reset your database to factory defaults.
-                <span className="text-red-500 font-medium"> Warning: This action cannot be undone.</span>
+                <span className="text-red-500 dark:text-red-400 font-medium"> Warning: This action cannot be undone.</span>
               </p>
               <button
                 onClick={handleResetDatabase}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md"
+                className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
               >
                 Reset All Data
               </button>

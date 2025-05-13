@@ -404,6 +404,36 @@ const Products = () => {
     setShowScanner(false);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full py-8">
+        <div className="animate-pulse-slow text-center">
+          <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-gray-500 dark:text-dark-300">Loading products...</p>
+        </div>
+      </div>
+    );
+  } else if (getPaginatedProducts().length === 0) {
+    return (
+      <div className="text-center py-8 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+        <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        <p className="mt-2 text-gray-500 dark:text-dark-300">
+          {searchTerm ? 'No products found matching your search' : 'No products found'}
+        </p>
+        <button
+          onClick={handleAddNew}
+          className="mt-3 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
+        >
+          Add your first product
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       {/* Notification */}
@@ -671,132 +701,110 @@ const Products = () => {
       )}
       
       {/* Product List */}
-      {isLoading ? (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          <p className="mt-2 text-gray-500">Loading products...</p>
-        </div>
-      ) : getPaginatedProducts().length === 0 ? (
-        <div className="text-center py-8 bg-white rounded-lg shadow p-6">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-          <p className="mt-2 text-gray-500">
-            {searchTerm ? 'No products found matching your search' : 'No products found'}
-          </p>
-          <button
-            onClick={handleAddNew}
-            className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
-          >
-            Add your first product
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {getPaginatedProducts().map(product => (
-                <tr key={product._id} className={`hover:bg-gray-50 ${isLowStock(product) ? 'bg-yellow-50' : ''}`}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12 border rounded-md overflow-hidden bg-gray-50 flex items-center justify-center">
-                        {product.imageUrl ? (
-                          <img className="max-h-12 max-w-12 object-contain" src={product.imageUrl} alt={product.name} />
-                        ) : (
-                          <span className="text-sm font-medium text-gray-500">
-                            {product.name.substring(0, 2).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
-                      </div>
+      <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+          <thead className="bg-gray-50 dark:bg-dark-600">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Product</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Barcode</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Category</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Price</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Stock</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
+            {getPaginatedProducts().map(product => (
+              <tr key={product._id} className={`hover:bg-gray-50 dark:hover:bg-dark-600 ${isLowStock(product) ? 'bg-yellow-50 dark:bg-amber-900/20' : ''} transition-colors duration-150`}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-12 w-12 border border-gray-200 dark:border-dark-600 rounded-md overflow-hidden bg-gray-50 dark:bg-dark-600 flex items-center justify-center">
+                      {product.imageUrl ? (
+                        <img className="max-h-12 max-w-12 object-contain" src={product.imageUrl} alt={product.name} />
+                      ) : (
+                        <span className="text-sm font-medium text-gray-500 dark:text-dark-300">
+                          {product.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.barcode}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getCategoryName(product.categoryId)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {formatCurrency(product.price)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      product.stock <= 0 ? 'bg-red-600 text-white' : 
-                      isLowStock(product) ? 'bg-amber-500 text-white' : 
-                      'bg-green-600 text-white'
-                    }`}>
-                      {product.stock !== undefined ? product.stock : 'N/A'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product._id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => handleManageStock(product)}
-                      className="text-green-600 hover:text-green-900"
-                    >
-                      Stock
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-dark-800 dark:text-white">{product.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-dark-300 truncate max-w-xs">{product.description}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.barcode}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{getCategoryName(product.categoryId)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">
+                  {formatCurrency(product.price)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    product.stock <= 0 ? 'bg-red-600 text-white' : 
+                    isLowStock(product) ? 'bg-amber-500 text-white' : 
+                    'bg-green-600 text-white'
+                  }`}>
+                    {product.stock !== undefined ? product.stock : 'N/A'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors duration-150"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product._id)}
+                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-150"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => handleManageStock(product)}
+                    className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors duration-150"
+                  >
+                    Stock
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+        <div className="bg-white dark:bg-dark-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-dark-500 sm:px-6 mt-4 rounded-lg shadow-soft dark:shadow-none transition-colors duration-200">
           <div className="flex-1 flex justify-between items-center">
             {/* Items per page selector */}
             <div className="flex items-center">
-              <span className="text-sm text-gray-700 mr-2">
+              <span className="text-sm text-gray-700 dark:text-dark-300 mr-2">
                 Show
               </span>
               <select 
                 value={itemsPerPage} 
                 onChange={handleItemsPerPageChange}
-                className="border border-gray-300 rounded-md text-sm px-2 py-1"
+                className="border border-gray-300 dark:border-dark-500 rounded-md text-sm px-2 py-1 bg-white dark:bg-dark-600 text-dark-800 dark:text-white"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
-              <span className="text-sm text-gray-700 ml-2">
+              <span className="text-sm text-gray-700 dark:text-dark-300 ml-2">
                 per page
               </span>
             </div>
             
             {/* Pagination info */}
             <div className="hidden sm:block">
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{getFilteredProducts().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
-                <span className="font-medium">
+              <p className="text-sm text-gray-700 dark:text-dark-300">
+                Showing <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
+                <span className="font-medium text-dark-800 dark:text-white">
                   {Math.min(currentPage * itemsPerPage, getFilteredProducts().length)}
                 </span>{' '}
-                of <span className="font-medium">{getFilteredProducts().length}</span> products
+                of <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length}</span> products
               </p>
             </div>
             
@@ -806,10 +814,10 @@ const Products = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
                   currentPage === 1
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
+                    : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
                 }`}
               >
                 <span className="sr-only">Previous</span>
@@ -848,7 +856,7 @@ const Products = () => {
                   if ((totalPages > 5 && i === 3 && currentPage <= 3) || 
                       (totalPages > 5 && i === 1 && currentPage >= totalPages - 2)) {
                     return (
-                      <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700">...</span>
+                      <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700 dark:text-dark-300">...</span>
                     );
                   }
                   
@@ -856,10 +864,10 @@ const Products = () => {
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`px-3 py-1 rounded-md text-sm ${
+                      className={`px-3 py-1 rounded-md text-sm transition-colors duration-150 ${
                         currentPage === pageNum
-                          ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? 'bg-primary-500 dark:bg-primary-600 text-white'
+                          : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
                       }`}
                     >
                       {pageNum}
@@ -872,10 +880,10 @@ const Products = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium ${
+                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
                   currentPage === totalPages
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
+                    : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
                 }`}
               >
                 <span className="sr-only">Next</span>

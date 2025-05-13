@@ -48,6 +48,13 @@ contextBridge.exposeInMainWorld(
     auth: {
       login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
       logout: () => ipcRenderer.invoke('auth:logout')
+    },
+    
+    // Window control for custom title bar
+    window: {
+      minimize: () => ipcRenderer.send('window:minimize'),
+      maximize: () => ipcRenderer.send('window:maximize'),
+      close: () => ipcRenderer.send('window:close')
     }
   }
 ); 

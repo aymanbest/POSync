@@ -183,10 +183,10 @@ const Categories = () => {
       )}
       
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Categories</h1>
+        <h1 className="text-2xl font-bold text-dark-800 dark:text-white">Categories</h1>
         <button
           onClick={handleAddNew}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+          className="bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
         >
           Add New Category
         </button>
@@ -199,58 +199,62 @@ const Categories = () => {
           placeholder="Search categories by name or description..."
           value={searchTerm}
           onChange={handleSearchChange}
-          className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
         />
       </div>
       
       {/* Categories List */}
       {isLoading ? (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          <p className="mt-2 text-gray-500">Loading categories...</p>
+        <div className="flex items-center justify-center h-full py-8">
+          <div className="animate-pulse-slow text-center">
+            <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="mt-4 text-gray-500 dark:text-dark-300">Loading categories...</p>
+          </div>
         </div>
       ) : getFilteredCategories().length === 0 ? (
-        <div className="text-center py-8 bg-white rounded-lg shadow p-6">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="text-center py-8 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          <p className="mt-2 text-gray-500">{searchTerm ? 'No categories found matching your search' : 'No categories found'}</p>
+          <p className="mt-2 text-gray-500 dark:text-dark-300">{searchTerm ? 'No categories found matching your search' : 'No categories found'}</p>
           <button
             onClick={handleAddNew}
-            className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+            className="mt-3 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
           >
             Add your first category
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+            <thead className="bg-gray-50 dark:bg-dark-600">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
               {getPaginatedCategories().map(category => (
-                <tr key={category._id} className="hover:bg-gray-50">
+                <tr key={category._id} className="hover:bg-gray-50 dark:hover:bg-dark-600 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                    <div className="text-sm font-medium text-dark-800 dark:text-white">{category.name}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500">{category.description}</div>
+                    <div className="text-sm text-gray-500 dark:text-dark-300">{category.description}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEdit(category)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 mr-3 transition-colors duration-150"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(category._id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-150"
                     >
                       Delete
                     </button>
@@ -264,24 +268,24 @@ const Categories = () => {
       
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow">
+        <div className="bg-white dark:bg-dark-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-dark-500 sm:px-6 mt-4 rounded-lg shadow-soft dark:shadow-none transition-colors duration-200">
           <div className="flex-1 flex justify-between items-center">
             {/* Items per page selector */}
             <div className="flex items-center">
-              <span className="text-sm text-gray-700 mr-2">
+              <span className="text-sm text-gray-700 dark:text-dark-300 mr-2">
                 Show
               </span>
               <select 
                 value={itemsPerPage} 
                 onChange={handleItemsPerPageChange}
-                className="border border-gray-300 rounded-md text-sm px-2 py-1"
+                className="border border-gray-300 dark:border-dark-500 rounded-md text-sm px-2 py-1 bg-white dark:bg-dark-600 text-dark-800 dark:text-white"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
-              <span className="text-sm text-gray-700 ml-2">
+              <span className="text-sm text-gray-700 dark:text-dark-300 ml-2">
                 per page
               </span>
             </div>
