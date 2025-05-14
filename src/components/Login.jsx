@@ -7,6 +7,7 @@ const Login = ({ onLogin, darkMode, toggleDarkMode }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,9 +17,20 @@ const Login = ({ onLogin, darkMode, toggleDarkMode }) => {
     try {
       const result = await onLogin({ username, password });
       if (!result.success) {
-        setError(result.error || 'Login failed. Please check your credentials.');
+        setLoginAttempts(prev => prev + 1);
+        
+        // Provide specific error message for inactive accounts
+        if (result.error?.includes('inactive')) {
+          setError(result.error);
+        } else if (loginAttempts >= 2) {
+          // After 3 failed attempts, provide more helpful error
+          setError('Login failed. If you\'re having trouble, please contact an administrator.');
+        } else {
+          setError(result.error || 'Login failed. Please check your credentials.');
+        }
       }
     } catch (error) {
+      setLoginAttempts(prev => prev + 1);
       setError('An unexpected error occurred. Please try again.');
       console.error('Login error:', error);
     } finally {
@@ -28,12 +40,13 @@ const Login = ({ onLogin, darkMode, toggleDarkMode }) => {
 
   return (
     <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-dark-800 transition-colors duration-200">
-      <div className="max-w-md w-full px-6 py-10 bg-white dark:bg-dark-700 shadow-medium dark:shadow-none rounded-2xl">
-        <div className="absolute top-4 right-4">
+      <div className="max-w-md w-full px-6 py-10 bg-white dark:bg-dark-700 shadow-medium dark:shadow-none rounded-2xl relative">
+        <div className="absolute top-5 right-5">
           <button
             onClick={toggleDarkMode}
-            className="p-2 rounded-full text-dark-500 dark:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none transition-colors duration-200"
+            className="p-2 rounded-full bg-gray-100 dark:bg-dark-600 text-dark-500 dark:text-dark-100 hover:bg-gray-200 dark:hover:bg-dark-500 focus:outline-none transition-colors duration-200"
             aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {darkMode ? <IconSun size={20} /> : <IconMoon size={20} />}
           </button>

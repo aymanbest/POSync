@@ -42,7 +42,39 @@ db.users.findOne({ role: 'admin' }, (err, adminUser) => {
       username: 'admin',
       password: 'admin', // This should be hashed in production
       role: 'admin',
+      fullName: 'System Administrator',
+      permissions: [
+        'dashboard',
+        'pos',
+        'products',
+        'categories',
+        'transactions',
+        'reports',
+        'stock',
+        'settings',
+        'staff'
+      ],
+      active: true,
       createdAt: new Date()
+    });
+  } else if (!adminUser.permissions || adminUser.permissions.length === 0) {
+    // Ensure existing admin user has permissions
+    db.users.update({ _id: adminUser._id }, { 
+      $set: { 
+        permissions: [
+          'dashboard',
+          'pos',
+          'products',
+          'categories',
+          'transactions',
+          'reports',
+          'stock',
+          'settings',
+          'staff'
+        ],
+        active: true,
+        fullName: adminUser.fullName || 'System Administrator'
+      } 
     });
   }
 });

@@ -174,12 +174,21 @@ const setupDbHandlers = () => {
       const user = await promisify(db.users.findOne.bind(db.users), { username });
       if (!user) throw new Error('User not found');
       if (user.password !== password) throw new Error('Invalid password'); // Replace with proper hashing
+      
+      // Check if user is active
+      if (user.active === false) {
+        throw new Error('Account is inactive. Please contact an administrator.');
+      }
+      
       return { 
         success: true, 
-        user: { 
-          username: user.username, 
-          role: user.role 
-        } 
+        user: {
+          username: user.username,
+          role: user.role,
+          permissions: user.permissions || [],
+          fullName: user.fullName,
+          _id: user._id
+        }
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -514,6 +523,19 @@ const setupDbHandlers = () => {
         username: 'admin',
         password: 'admin', // In production this should be hashed
         role: 'admin',
+        fullName: 'System Administrator',
+        permissions: [
+          'dashboard',
+          'pos',
+          'products',
+          'categories',
+          'transactions',
+          'reports',
+          'stock',
+          'settings',
+          'staff'
+        ],
+        active: true,
         createdAt: new Date()
       });
 
@@ -521,6 +543,108 @@ const setupDbHandlers = () => {
     } catch (error) {
       console.error('Error resetting database:', error);
       return { success: false, message: `Reset failed: ${error.message}` };
+    }
+  });
+
+  // Staff management handlers
+  ipcMain.handle('staff:getUsers', async (event) => {
+    try {
+      return await promisify(db.users.find.bind(db.users), {});
+    } catch (error) {
+      console.error('Error getting users:', error);
+      throw new Error('Failed to get users');
+    }
+  });
+
+  ipcMain.handle('staff:getUser', async (event, id) => {
+    try {
+      const user = await promisify(db.users.findOne.bind(db.users), { _id: id });
+      if (!user) throw new Error('User not found');
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      throw new Error('Failed to get user');
+    }
+  });
+
+  ipcMain.handle('staff:addUser', async (event, userData) => {
+    try {
+      // Check if username already exists
+      const existingUser = await promisify(db.users.findOne.bind(db.users), { username: userData.username });
+      if (existingUser) throw new Error('Username already exists');
+      
+      // Add creation date
+      const newUser = {
+        ...userData,
+        createdAt: new Date(),
+        active: userData.active !== false // Default to active if not specified
+      };
+      
+      // Remove confirmPassword if it exists
+      if (newUser.confirmPassword) delete newUser.confirmPassword;
+      
+      const insertedUser = await promisify(db.users.insert.bind(db.users), newUser);
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = insertedUser;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      throw new Error(error.message || 'Failed to add user');
+    }
+  });
+
+  ipcMain.handle('staff:updateUser', async (event, id, userData) => {
+    try {
+      // Find the user first
+      const existingUser = await promisify(db.users.findOne.bind(db.users), { _id: id });
+      if (!existingUser) throw new Error('User not found');
+      
+      // If no password provided, keep the existing one
+      if (!userData.password) {
+        userData.password = existingUser.password;
+      }
+      
+      // Remove confirmPassword if it exists
+      if (userData.confirmPassword) delete userData.confirmPassword;
+      
+      // Add update date
+      userData.updatedAt = new Date();
+      
+      await promisify(db.users.update.bind(db.users), { _id: id }, { $set: userData });
+      
+      // Get the updated user
+      const updatedUser = await promisify(db.users.findOne.bind(db.users), { _id: id });
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = updatedUser;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw new Error(error.message || 'Failed to update user');
+    }
+  });
+
+  ipcMain.handle('staff:deleteUser', async (event, id) => {
+    try {
+      // Don't allow deleting the last admin
+      const adminUsers = await promisify(db.users.find.bind(db.users), { role: 'admin' });
+      const userToDelete = await promisify(db.users.findOne.bind(db.users), { _id: id });
+      
+      if (userToDelete && userToDelete.role === 'admin' && adminUsers.length <= 1) {
+        throw new Error('Cannot delete the last administrator account');
+      }
+      
+      const numRemoved = await promisify(db.users.remove.bind(db.users), { _id: id }, {});
+      if (numRemoved === 0) throw new Error('User not found');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error(error.message || 'Failed to delete user');
     }
   });
 };

@@ -2,7 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconBell, IconX, IconInfoCircle, IconCheck, IconChevronRight, IconPackages } from '@tabler/icons-react';
 
-const LowStockNotification = ({ settings }) => {
+const LowStockNotification = ({ settings, user }) => {
+  // Check if user has permission to view stock notifications
+  const hasPermission = () => {
+    if (!user) return false;
+    // Allow access to admins, managers, and stock managers
+    if (user.role === 'admin' || user.role === 'manager' || user.role === 'stockManager') return true;
+    // Check for inventory_alerts permission or stock permission
+    return user.permissions?.includes('inventory_alerts') || user.permissions?.includes('stock') || false;
+  };
+
+  // If user doesn't have permission, don't render the component
+  if (!hasPermission()) {
+    return null;
+  }
+  
   const [lowStockItems, setLowStockItems] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

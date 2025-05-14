@@ -10,7 +10,37 @@ import POS from './POS';
 import Navbar from './Navbar';
 import TitleBar from './TitleBar';
 import StockManagement from './StockManagement';
+import StaffManagement from './StaffManagement';
 import Reports from '../pages/Reports';
+
+// Define permissions for each route
+const ROUTE_PERMISSIONS = {
+  '/': 'dashboard',
+  '/pos': 'pos',
+  '/products': 'products',
+  '/categories': 'categories',
+  '/transactions': 'transactions',
+  '/settings': 'settings',
+  '/stock-management': 'stock',
+  '/reports': 'reports',
+  '/staff': 'staff'
+};
+
+// Protected route component
+const ProtectedRoute = ({ user, permission, element }) => {
+  // Admin can access everything
+  if (user?.role === 'admin') {
+    return element;
+  }
+  
+  // Check if user has required permission
+  if (user?.permissions?.includes(permission)) {
+    return element;
+  }
+  
+  // Redirect to dashboard if user doesn't have permission
+  return <Navigate to="/" replace />;
+};
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -43,6 +73,7 @@ const App = () => {
     setDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode.toString());
     
+    // Apply the dark mode change to the document
     if (newDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -96,13 +127,86 @@ const App = () => {
               <div className="container mx-auto px-4 py-4 animate-fade-in">
                 <Routes>
                   <Route path="/" element={<Dashboard user={user} />} />
-                  <Route path="/pos" element={<POS user={user} />} />
-                  <Route path="/products" element={<Products user={user} />} />
-                  <Route path="/categories" element={<Categories user={user} />} />
-                  <Route path="/transactions" element={<Transactions user={user} />} />
-                  <Route path="/settings" element={<Settings user={user} />} />
-                  <Route path="/stock-management" element={<StockManagement user={user} />} />
-                  <Route path="/reports" element={<Reports user={user} />} />
+                  <Route 
+                    path="/pos" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/pos']} 
+                        element={<POS user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/products" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/products']} 
+                        element={<Products user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/categories" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/categories']} 
+                        element={<Categories user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/transactions" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/transactions']} 
+                        element={<Transactions user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/settings" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/settings']} 
+                        element={<Settings user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/stock-management" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/stock-management']} 
+                        element={<StockManagement user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/reports" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/reports']} 
+                        element={<Reports user={user} />}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/staff" 
+                    element={
+                      <ProtectedRoute 
+                        user={user} 
+                        permission={ROUTE_PERMISSIONS['/staff']} 
+                        element={<StaffManagement user={user} />}
+                      />
+                    } 
+                  />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </div>

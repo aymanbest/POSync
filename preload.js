@@ -50,6 +50,15 @@ contextBridge.exposeInMainWorld(
       logout: () => ipcRenderer.invoke('auth:logout')
     },
     
+    // Staff management
+    staff: {
+      getUsers: () => ipcRenderer.invoke('staff:getUsers'),
+      getUser: (id) => ipcRenderer.invoke('staff:getUser', id),
+      addUser: (userData) => ipcRenderer.invoke('staff:addUser', userData),
+      updateUser: (id, userData) => ipcRenderer.invoke('staff:updateUser', id, userData),
+      deleteUser: (id) => ipcRenderer.invoke('staff:deleteUser', id)
+    },
+    
     // Window control for custom title bar
     window: {
       minimize: () => ipcRenderer.send('window:minimize'),

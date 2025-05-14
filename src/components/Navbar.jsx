@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import LowStockNotification from './LowStockNotification';
 import { 
-  IconHome, 
-  IconShoppingCart, 
+  IconMenu2, 
+  IconX, 
+  IconMoon, 
+  IconSun, 
   IconBox, 
-  IconCategory, 
-  IconReceipt, 
-  IconChartBar, 
-  IconPackages, 
-  IconSettings,
-  IconMenu2,
-  IconSun,
-  IconMoon,
+  IconSettings, 
+  IconBell, 
+  IconLogout, 
   IconUser,
-  IconLogout
+  IconDashboard,
+  IconCash,
+  IconTag,
+  IconHistory,
+  IconReportAnalytics,
+  IconPackage,
+  IconUsers
 } from '@tabler/icons-react';
+import LowStockNotification from './LowStockNotification';
+
+// Check if user has permission to access a specific route
+const hasPermission = (user, permission) => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return user.permissions?.includes(permission) || false;
+};
 
 const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
   const location = useLocation();
@@ -44,16 +54,29 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
     setMobileMenuOpen(false);
   }, [location]);
 
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: <IconHome size={20} /> },
-    { path: '/pos', label: 'POS', icon: <IconShoppingCart size={20} /> },
-    { path: '/products', label: 'Products', icon: <IconBox size={20} /> },
-    { path: '/categories', label: 'Categories', icon: <IconCategory size={20} /> },
-    { path: '/transactions', label: 'Transactions', icon: <IconReceipt size={20} /> },
-    { path: '/reports', label: 'Reports', icon: <IconChartBar size={20} /> },
-    { path: '/stock-management', label: 'Stock', icon: <IconPackages size={20} /> },
-    { path: '/settings', label: 'Settings', icon: <IconSettings size={20} /> }
+  // Define menu items with correct icon references
+  const menuItems = [
+    { path: '/', label: 'Dashboard', icon: <IconDashboard size={20} />, permission: 'dashboard' },
+    { path: '/pos', label: 'POS', icon: <IconCash size={20} />, permission: 'pos' },
+    { path: '/products', label: 'Products', icon: <IconBox size={20} />, permission: 'products' },
+    { path: '/categories', label: 'Categories', icon: <IconTag size={20} />, permission: 'categories' },
+    { path: '/transactions', label: 'Transactions', icon: <IconHistory size={20} />, permission: 'transactions' },
+    { path: '/reports', label: 'Reports', icon: <IconReportAnalytics size={20} />, permission: 'reports' },
+    { path: '/stock-management', label: 'Stock', icon: <IconPackage size={20} />, permission: 'stock' },
+    { path: '/settings', label: 'Settings', icon: <IconSettings size={20} />, permission: 'settings' },
+    { path: '/staff', label: 'Staff', icon: <IconUsers size={20} />, permission: 'staff' }
   ];
+
+  // Handle dark mode toggle with debug
+  const handleDarkModeToggle = () => {
+    console.log('Toggling dark mode from:', darkMode, 'to:', !darkMode);
+    toggleDarkMode();
+    // Verify the result after a short delay
+    setTimeout(() => {
+      console.log('Dark mode is now:', !darkMode);
+      console.log('Dark class on HTML:', document.documentElement.classList.contains('dark'));
+    }, 100);
+  };
 
   return (
     <nav className="bg-white dark:bg-dark-700 shadow-sm dark:shadow-none border-b border-gray-200 dark:border-dark-600 transition-colors duration-200">
@@ -73,37 +96,118 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
 
           {/* Desktop navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-            {navItems.map((item) => (
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+              }
+            >
+              <IconDashboard size={18} className="mr-1" /> Dashboard
+            </NavLink>
+            
+            {hasPermission(user, 'pos') && (
               <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => 
-                  `px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-1.5 transition-all duration-150 ${
-                    isActive
-                      ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
-                      : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600 hover:text-primary-600 dark:hover:text-primary-400'
-                  }`
+                to="/pos"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
                 }
               >
-                <span className={location.pathname === item.path ? 'text-primary-600 dark:text-primary-400' : 'text-dark-400 dark:text-dark-200'}>{item.icon}</span>
-                <span>{item.label}</span>
+                <IconCash size={18} className="mr-1" /> POS
               </NavLink>
-            ))}
+            )}
+            
+            {hasPermission(user, 'products') && (
+              <NavLink
+                to="/products"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconBox size={18} className="mr-1" /> Products
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'categories') && (
+              <NavLink
+                to="/categories"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconTag size={18} className="mr-1" /> Categories
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'transactions') && (
+              <NavLink
+                to="/transactions"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconHistory size={18} className="mr-1" /> Transactions
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'reports') && (
+              <NavLink
+                to="/reports"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconReportAnalytics size={18} className="mr-1" /> Reports
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'stock') && (
+              <NavLink
+                to="/stock-management"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconPackage size={18} className="mr-1" /> Stock
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'settings') && (
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconSettings size={18} className="mr-1" /> Settings
+              </NavLink>
+            )}
+            
+            {hasPermission(user, 'staff') && (
+              <NavLink
+                to="/staff"
+                className={({ isActive }) =>
+                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                }
+              >
+                <IconUsers size={18} className="mr-1" /> Staff
+              </NavLink>
+            )}
           </div>
 
           {/* Right side menu (dark mode toggle, notifications, profile) */}
           <div className="flex items-center space-x-2">
             {/* Dark mode toggle */}
             <button
-              onClick={toggleDarkMode}
+              onClick={handleDarkModeToggle}
               className="p-2 rounded-full text-dark-500 dark:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none transition-colors duration-200"
               aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {darkMode ? <IconSun size={20} /> : <IconMoon size={20} />}
             </button>
             
             {/* Notifications */}
-            {settings && <LowStockNotification settings={settings} />}
+            {settings && <LowStockNotification settings={settings} user={user} />}
             
             {/* User profile dropdown */}
             <div className="relative">
@@ -133,7 +237,7 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
                 aria-expanded={mobileMenuOpen}
                 aria-label="Toggle menu"
               >
-                <IconMenu2 size={22} />
+                {mobileMenuOpen ? <IconX size={22} /> : <IconMenu2 size={22} />}
               </button>
             </div>
           </div>
@@ -143,22 +247,24 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
       {/* Mobile menu */}
       <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-dark-700 border-t border-gray-100 dark:border-dark-600">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => 
-                `block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 ${
-                  isActive
-                    ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
-                    : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
-                }`
-              }
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {menuItems
+            .filter(item => !item.permission || hasPermission(user, item.permission))
+            .map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => 
+                  `block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 ${
+                    isActive
+                      ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
+                      : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
+                  }`
+                }
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
         </div>
       </div>
     </nav>
