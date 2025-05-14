@@ -12,6 +12,7 @@ import TitleBar from './TitleBar';
 import StockManagement from './StockManagement';
 import StaffManagement from './StaffManagement';
 import Reports from '../pages/Reports';
+import SetupWizard from './SetupWizard';
 
 // Define permissions for each route
 const ROUTE_PERMISSIONS = {
@@ -46,27 +47,110 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [setupComplete, setSetupComplete] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    // Check if setup is complete
+    const checkSetup = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Error parsing stored user:', e);
+        // First check if the isSetupComplete flag is set in settings
+        const settings = await window.api.settings.getSettings();
+        
+        if (settings && settings.isSetupComplete === true) {
+          console.log('Setup complete: Found isSetupComplete flag');
+          setSetupComplete(true);
+          return;
+        }
+        
+        // If no explicit setup flag, check if there are any users in the DB
+        // If there are users, especially admin users, we can assume setup was done
+        try {
+          const users = await window.api.auth.getUsers();
+          if (users && users.length > 0 && users.some(user => user.role === 'admin')) {
+            // Found admin users, so DB is populated - mark setup as complete
+            console.log('Setup complete: Found admin users');
+            setSetupComplete(true);
+            
+            // Also save the settings to set the flag for future app launches
+            if (settings) {
+              await window.api.settings.updateSettings({
+                ...settings,
+                isSetupComplete: true
+              });
+            } else {
+              // If somehow settings don't exist but users do, create default settings
+              await window.api.settings.updateSettings({
+                businessName: 'POS System',
+                isSetupComplete: true
+              });
+            }
+            return;
+          }
+          
+          // No admin users found - setup is not complete
+          console.log('Setup not complete: No admin users found');
+          setSetupComplete(false);
+        } catch (userError) {
+          console.error('Error checking users:', userError);
+          setSetupComplete(false);
+        }
+      } catch (error) {
+        console.error('Error checking setup status:', error);
+        
+        // If there was an error getting settings, check if users exist directly
+        try {
+          const users = await window.api.auth.getUsers();
+          if (users && users.length > 0 && users.some(user => user.role === 'admin')) {
+            // Admin users exist, so database is populated - consider setup complete
+            console.log('Setup complete (fallback): Found admin users');
+            setSetupComplete(true);
+            return;
+          }
+          
+          // No admin users found in fallback check
+          console.log('Setup not complete (fallback): No admin users found');
+          setSetupComplete(false);
+        } catch (fallbackError) {
+          console.error('Fallback user check failed:', fallbackError);
+          setSetupComplete(false);
+        }
       }
-    }
+    };
+    
+    // Check if user is already logged in (from localStorage)
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error('Error parsing stored user:', e);
+        }
+      }
+    };
 
     // Check for dark mode preference
-    const darkModePref = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(darkModePref);
-    if (darkModePref) {
-      document.documentElement.classList.add('dark');
-    }
+    const checkTheme = () => {
+      const darkModePref = localStorage.getItem('darkMode') === 'true';
+      setDarkMode(darkModePref);
+      if (darkModePref) {
+        document.documentElement.classList.add('dark');
+      }
+    };
 
-    setIsLoading(false);
+    const initializeApp = async () => {
+      await checkSetup();
+      checkAuth();
+      checkTheme();
+      setIsLoading(false);
+    };
+
+    initializeApp();
   }, []);
+
+  const handleSetupComplete = () => {
+    setSetupComplete(true);
+  };
 
   const toggleDarkMode = () => {
     const newDarkMode = !darkMode;
@@ -113,6 +197,11 @@ const App = () => {
         </div>
       </div>
     );
+  }
+
+  // Show setup wizard if setup is not complete
+  if (!setupComplete) {
+    return <SetupWizard onComplete={handleSetupComplete} />;
   }
 
   return (

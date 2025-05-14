@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, session, screen } = require('electron');
 const path = require('path');
 const { setupDbHandlers } = require('./src/controllers/db-controller');
 const { setupPrintHandlers } = require('./src/controllers/print-controller');
+const { setupEnvHandlers } = require('./src/controllers/env-controller');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -40,6 +41,7 @@ function createWindow() {
     titleBarStyle: 'hidden',
     transparent: false,
     backgroundColor: '#ffffff',
+    icon: path.join(__dirname, 'assets/images/logo.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -99,9 +101,10 @@ app.on('ready', () => {
 
   createWindow();
   
-  // Set up database and print handlers
+  // Set up handlers
   setupDbHandlers();
   setupPrintHandlers();
+  setupEnvHandlers();
   
   // Handle window control events from renderer
   ipcMain.on('window:minimize', () => {

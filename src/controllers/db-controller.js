@@ -2,6 +2,7 @@ const db = require('../db');
 const { ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { seedDatabase } = require('../db/seeder');
 
 // Helper to convert callbacks to promises
 const promisify = (dbMethod, ...args) => {
@@ -15,6 +16,16 @@ const promisify = (dbMethod, ...args) => {
 
 // Set up IPC handlers for database operations
 const setupDbHandlers = () => {
+  // Seeder handler for development purposes
+  ipcMain.handle('db:seedDatabase', async (event, options) => {
+    try {
+      return await seedDatabase(options);
+    } catch (error) {
+      console.error('Error seeding database:', error);
+      throw error;
+    }
+  });
+
   // Product handlers
   ipcMain.handle('db:getProducts', async () => {
     try {
@@ -187,12 +198,82 @@ const setupDbHandlers = () => {
           role: user.role,
           permissions: user.permissions || [],
           fullName: user.fullName,
-          _id: user._id
-        }
+        } 
       };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('auth:logout', async () => {
+    return { success: true };
+  });
+  
+  // Added new handlers for the setup process
+  ipcMain.handle('auth:getUsers', async () => {
+    try {
+      return await promisify(db.users.find.bind(db.users), {});
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  });
+  
+  ipcMain.handle('auth:createAdmin', async (event, userData) => {
+    try {
+      // First check if admin already exists
+      const existingAdmin = await promisify(
+        db.users.findOne.bind(db.users), 
+        { role: 'admin' }
+      );
+      
+      if (existingAdmin) {
+        throw new Error('Admin user already exists');
+      }
+      
+      // Create the admin user with full permissions
+      const adminUser = {
+        ...userData,
+        role: 'admin',
+        permissions: [
+          'dashboard', 'pos', 'products', 'categories', 
+          'transactions', 'settings', 'stock', 'reports', 'staff'
+        ],
+        active: true,
+        createdAt: new Date()
+      };
+      
+      return await promisify(db.users.insert.bind(db.users), adminUser);
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      throw error;
+    }
+  });
+
+  // Initialize defaults for a new setup
+  ipcMain.handle('db:initializeDefaults', async () => {
+    try {
+      // Create default categories if none exist
+      const categories = await promisify(db.categories.find.bind(db.categories), {});
+      
+      if (categories.length === 0) {
+        const defaultCategories = [
+          { name: 'Food', color: '#4CAF50' },
+          { name: 'Beverages', color: '#2196F3' },
+          { name: 'Snacks', color: '#FF9800' },
+          { name: 'Household', color: '#9C27B0' }
+        ];
+        
+        for (const category of defaultCategories) {
+          await promisify(db.categories.insert.bind(db.categories), category);
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error initializing defaults:', error);
+      throw error;
     }
   });
 
@@ -502,44 +583,17 @@ const setupDbHandlers = () => {
       await promisify(db.settings.remove.bind(db.settings), {}, { multi: true });
       await promisify(db.users.remove.bind(db.users), {}, { multi: true });
 
-      // Re-initialize default settings
-      await promisify(db.settings.insert.bind(db.settings), {
-        _id: 'app-settings',
-        businessName: 'My POS Store',
-        address: '123 Main St',
-        phone: '555-123-4567',
-        email: 'info@myposstore.com',
-        currency: 'MAD',
-        taxRate: 7.5,
-        taxType: 'added',
-        taxName: 'Tax',
-        lowStockThreshold: 5,
-        receiptFooter: 'Thank you for your business!',
-        createdAt: new Date()
-      });
+      // Compact databases to reclaim space
+      await promisify(db.products.compactDatafile.bind(db.products));
+      await promisify(db.categories.compactDatafile.bind(db.categories));
+      await promisify(db.transactions.compactDatafile.bind(db.transactions));
+      await promisify(db.settings.compactDatafile.bind(db.settings));
+      await promisify(db.users.compactDatafile.bind(db.users));
 
-      // Re-initialize default admin user
-      await promisify(db.users.insert.bind(db.users), {
-        username: 'admin',
-        password: 'admin', // In production this should be hashed
-        role: 'admin',
-        fullName: 'System Administrator',
-        permissions: [
-          'dashboard',
-          'pos',
-          'products',
-          'categories',
-          'transactions',
-          'reports',
-          'stock',
-          'settings',
-          'staff'
-        ],
-        active: true,
-        createdAt: new Date()
-      });
-
-      return { success: true, message: 'All data has been reset to factory defaults' };
+      // Do NOT re-initialize default settings or users
+      // This will force the setup wizard to appear on next launch
+      
+      return { success: true, message: 'All data has been reset. Restart the application to begin setup.' };
     } catch (error) {
       console.error('Error resetting database:', error);
       return { success: false, message: `Reset failed: ${error.message}` };

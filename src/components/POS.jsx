@@ -34,6 +34,8 @@ const POS = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  const productsContainerRef = useRef(null);
+  const cartContainerRef = useRef(null);
 
   // Fetch initial data
   useEffect(() => {
@@ -55,11 +57,105 @@ const POS = () => {
     fetchData();
   }, []);
 
+  // Check if containers need scroll indicators
+  useEffect(() => {
+    const updateScrollableClass = () => {
+      if (productsContainerRef.current) {
+        const productsEl = productsContainerRef.current;
+        if (productsEl.scrollHeight > productsEl.clientHeight) {
+          productsEl.classList.add('scrollable-content');
+        } else {
+          productsEl.classList.remove('scrollable-content');
+        }
+      }
+      
+      if (cartContainerRef.current) {
+        const cartEl = cartContainerRef.current;
+        if (cartEl.scrollHeight > cartEl.clientHeight) {
+          cartEl.classList.add('scrollable-content');
+        } else {
+          cartEl.classList.remove('scrollable-content');
+        }
+      }
+    };
+    
+    // Run initially
+    updateScrollableClass();
+    
+    // Set up a resize observer to check when window or content changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateScrollableClass();
+    });
+    
+    if (productsContainerRef.current) {
+      resizeObserver.observe(productsContainerRef.current);
+    }
+    
+    if (cartContainerRef.current) {
+      resizeObserver.observe(cartContainerRef.current);
+    }
+    
+    // Update when products change
+    updateScrollableClass();
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [products, cart, selectedCategory, searchTerm]);
+
   // Focus on barcode input initially
   useEffect(() => {
     if (barcodeInputRef.current) {
       barcodeInputRef.current.focus();
     }
+  }, []);
+
+  // Setup custom scroll behavior
+  useEffect(() => {
+    const handleCustomScroll = (containerRef, event) => {
+      if (!containerRef.current) return;
+      
+      // Add slight resistance to scrolling for a smoother feel
+      const delta = event.deltaY * 0.8;
+      
+      // Animate the scroll with smooth behavior
+      containerRef.current.scrollBy({
+        top: delta,
+        behavior: 'smooth'
+      });
+      
+      // Prevent default to use our custom scrolling
+      event.preventDefault();
+    };
+    
+    const productsContainer = productsContainerRef.current;
+    const cartContainer = cartContainerRef.current;
+    
+    // Products container scroll handler
+    const handleProductsScroll = (e) => handleCustomScroll(productsContainerRef, e);
+    
+    // Cart container scroll handler
+    const handleCartScroll = (e) => handleCustomScroll(cartContainerRef, e);
+    
+    // Add event listeners
+    if (productsContainer) {
+      productsContainer.addEventListener('wheel', handleProductsScroll, { passive: false });
+    }
+    
+    if (cartContainer) {
+      cartContainer.addEventListener('wheel', handleCartScroll, { passive: false });
+    }
+    
+    // Clean up
+    return () => {
+      if (productsContainer) {
+        productsContainer.removeEventListener('wheel', handleProductsScroll);
+      }
+      
+      if (cartContainer) {
+        cartContainer.removeEventListener('wheel', handleCartScroll);
+      }
+    };
   }, []);
 
   const showNotification = (message, type = 'info') => {
@@ -367,11 +463,11 @@ const POS = () => {
   };
 
   return (
-    <div className="h-full flex flex-col md:flex-row animate-fade-in overflow-hidden">
+    <div className="h-full w-full flex flex-col md:flex-row overflow-hidden">
       {/* Left Side - Product List & Categories */}
-      <div className="w-full md:w-3/5 flex flex-col h-full overflow-hidden">
-        {/* Search & Barcode Scanner */}
-        <div className="p-4 bg-white dark:bg-dark-700 shadow dark:shadow-none rounded-xl mb-4 transition-colors duration-200">
+      <div className="w-full md:w-3/5 flex flex-col h-[50vh] md:h-screen">
+        {/* Search & Barcode Scanner - Fixed height */}
+        <div className="flex-shrink-0 p-4 bg-white dark:bg-dark-700 shadow dark:shadow-none rounded-xl mb-4 transition-colors duration-200">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-grow relative">
               <input 
@@ -408,8 +504,8 @@ const POS = () => {
           </div>
         </div>
         
-        {/* Category Filter */}
-        <div className="px-4 mb-4 flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+        {/* Category Filter - Fixed height */}
+        <div className="flex-shrink-0 px-4 mb-4 flex space-x-2 overflow-x-auto pb-2 custom-scrollbar">
           <button
             onClick={() => setSelectedCategory('all')}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors duration-150 ${
@@ -436,8 +532,12 @@ const POS = () => {
           ))}
         </div>
         
-        {/* Products Grid */}
-        <div className="flex-grow overflow-y-auto px-4 pb-4">
+        {/* Products Grid - Take remaining height with scrolling */}
+        <div 
+          id="products-container" 
+          ref={productsContainerRef}
+          className="flex-1 h-0 overflow-y-auto px-4 pb-4 custom-scrollbar"
+        >
           {getFilteredProducts().length === 0 ? (
             <div className="text-center py-16 text-dark-500 dark:text-dark-300">
               <IconSearch size={48} className="mx-auto mb-4 text-dark-300 dark:text-dark-500" />
@@ -487,13 +587,13 @@ const POS = () => {
       </div>
       
       {/* Right Side - Cart */}
-      <div className="w-full md:w-2/5 flex flex-col h-full md:ml-4 mt-4 md:mt-0">
+      <div className="w-full md:w-2/5 flex flex-col h-[50vh] md:h-screen md:ml-4 mt-4 md:mt-0">
         <div className="bg-white dark:bg-dark-700 shadow-soft dark:shadow-none rounded-xl flex flex-col h-full overflow-hidden transition-colors duration-200">
-          {/* Cart Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
+          {/* Cart Header - Fixed height */}
+          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
             <h2 className="text-lg font-display font-semibold text-dark-800 dark:text-white flex items-center">
               <IconShoppingCart size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
-              Current Cart
+              Current Cart {cart.length > 0 && `(${cart.length})`}
             </h2>
             <button
               onClick={clearCart}
@@ -508,8 +608,12 @@ const POS = () => {
             </button>
           </div>
           
-          {/* Cart Items */}
-          <div className="flex-grow overflow-y-auto p-4 border-b border-gray-200 dark:border-dark-600">
+          {/* Cart Items - Take remaining height with scrolling but with max-height */}
+          <div 
+            id="cart-items-container" 
+            ref={cartContainerRef}
+            className="flex-1 overflow-y-auto p-4 border-b border-gray-200 dark:border-dark-600 max-h-[25vh] md:max-h-[35vh] lg:max-h-[40vh] custom-scrollbar"
+          >
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-dark-500 dark:text-dark-300">
                 <div className="rounded-full bg-primary-50 dark:bg-primary-900/20 p-3 mb-3">
@@ -523,10 +627,10 @@ const POS = () => {
                 {cart.map(item => (
                   <li key={item._id} className="bg-gray-50 dark:bg-dark-600 rounded-lg p-3 flex items-center justify-between transition-colors duration-150">
                     <div className="flex-grow mr-3">
-                      <p className="font-medium text-dark-800 dark:text-white">{item.name}</p>
+                      <p className="font-medium text-dark-800 dark:text-white truncate">{item.name}</p>
                       <p className="text-sm text-dark-500 dark:text-dark-300">{formatCurrency(item.price)} × {item.quantity}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <p className="font-medium text-dark-800 dark:text-white">{formatCurrency(item.price * item.quantity)}</p>
                       <div className="flex items-center mt-1 space-x-1">
                         <button 
@@ -562,8 +666,8 @@ const POS = () => {
             )}
           </div>
           
-          {/* Cart Summary */}
-          <div className="p-4">
+          {/* Cart Summary - Fixed height and guaranteed visibility */}
+          <div className="flex-shrink-0 p-4 bg-white dark:bg-dark-700">
             <div className="mb-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-dark-600 dark:text-dark-300">Subtotal:</span>

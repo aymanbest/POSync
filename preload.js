@@ -19,11 +19,13 @@ contextBridge.exposeInMainWorld(
       exportDatabase: () => ipcRenderer.invoke('db:export'),
       importDatabase: () => ipcRenderer.invoke('db:import'),
       resetDatabase: () => ipcRenderer.invoke('db:reset'),
+      seedDatabase: (options) => ipcRenderer.invoke('db:seedDatabase', options),
       // Report methods
       getSalesByTimeFrame: (timeFrame) => ipcRenderer.invoke('db:getSalesByTimeFrame', timeFrame),
       getTopSellingProducts: (timeFrame) => ipcRenderer.invoke('db:getTopSellingProducts', timeFrame),
       getSalesByDateRange: (startDate, endDate) => ipcRenderer.invoke('db:getSalesByDateRange', startDate, endDate),
-      getProductsStockReport: (filter) => ipcRenderer.invoke('db:getProductsStockReport', filter)
+      getProductsStockReport: (filter) => ipcRenderer.invoke('db:getProductsStockReport', filter),
+      initializeDefaults: () => ipcRenderer.invoke('db:initializeDefaults')
     },
     
     // Transaction operations
@@ -47,7 +49,9 @@ contextBridge.exposeInMainWorld(
     // Authentication
     auth: {
       login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
-      logout: () => ipcRenderer.invoke('auth:logout')
+      logout: () => ipcRenderer.invoke('auth:logout'),
+      getUsers: () => ipcRenderer.invoke('auth:getUsers'),
+      createAdmin: (userData) => ipcRenderer.invoke('auth:createAdmin', userData)
     },
     
     // Staff management
@@ -64,6 +68,12 @@ contextBridge.exposeInMainWorld(
       minimize: () => ipcRenderer.send('window:minimize'),
       maximize: () => ipcRenderer.send('window:maximize'),
       close: () => ipcRenderer.send('window:close')
+    },
+    
+    // Environment variables
+    env: {
+      get: (name, defaultValue) => ipcRenderer.invoke('env:get', name, defaultValue),
+      isDevelopmentMode: () => ipcRenderer.invoke('env:isDevelopmentMode')
     }
   }
 ); 

@@ -54,8 +54,8 @@ const Login = ({ onLogin, darkMode, toggleDarkMode }) => {
         
         <div className="text-center mb-8">
           <div className="mb-3 inline-flex">
-            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-medium">
-              <span className="text-white font-bold text-3xl">P</span>
+            <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-medium overflow-hidden">
+              <img src="./assets/images/logo.png" alt="ProPOS Logo" className="h-full w-full object-cover" />
             </div>
           </div>
           <h1 className="text-2xl font-display font-bold text-dark-800 dark:text-white mb-1">

@@ -108,6 +108,7 @@ const Products = () => {
     resetForm();
     setFormMode('add');
     setShowForm(true);
+    console.log("Opening product form:", showForm); // Debug log
   };
 
   const handleEdit = (product) => {
@@ -415,25 +416,9 @@ const Products = () => {
         </div>
       </div>
     );
-  } else if (getPaginatedProducts().length === 0) {
-    return (
-      <div className="text-center py-8 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
-        <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p className="mt-2 text-gray-500 dark:text-dark-300">
-          {searchTerm ? 'No products found matching your search' : 'No products found'}
-        </p>
-        <button
-          onClick={handleAddNew}
-          className="mt-3 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
-        >
-          Add your first product
-        </button>
-      </div>
-    );
   }
 
+  // Main component rendering
   return (
     <div className="relative">
       {/* Notification */}
@@ -451,41 +436,41 @@ const Products = () => {
       {/* Category Prompt Modal */}
       {showCategoryPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">Create Category First</h2>
-            <p className="text-gray-600 mb-4">
+          <div className="bg-white dark:bg-dark-700 rounded-lg p-6 max-w-md w-full shadow-soft dark:shadow-none transition-colors duration-200">
+            <h2 className="text-xl font-semibold mb-4 text-dark-800 dark:text-white">Create Category First</h2>
+            <p className="text-gray-600 dark:text-dark-300 mb-4">
               You need to create at least one category before adding products.
             </p>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                 Category Name
               </label>
               <input
                 type="text"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                 placeholder="Enter category name"
               />
             </div>
             <div className="flex justify-between">
               <button
                 onClick={() => setShowCategoryPrompt(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
+                className="bg-gray-300 hover:bg-gray-400 dark:bg-dark-500 dark:hover:bg-dark-400 text-gray-800 dark:text-dark-200 px-4 py-2 rounded-md transition-colors duration-150"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateCategory}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
               >
                 Create Category
               </button>
             </div>
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-sm text-gray-500 dark:text-dark-400">
               <p>
                 You can also manage categories from the{' '}
-                <NavLink to="/categories" className="text-blue-500 hover:underline">
+                <NavLink to="/categories" className="text-blue-500 dark:text-blue-400 hover:underline">
                   Categories
                 </NavLink>{' '}
                 section.
@@ -495,36 +480,15 @@ const Products = () => {
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <button
-          onClick={handleAddNew}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
-        >
-          Add New Product
-        </button>
-      </div>
-      
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search products by name, barcode or description..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      
-      {/* Product Form */}
+      {/* Product Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-dark-700 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-soft dark:shadow-none transition-colors duration-200">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">{formMode === 'add' ? 'Add New Product' : 'Edit Product'}</h2>
+              <h2 className="text-xl font-semibold text-dark-800 dark:text-white">{formMode === 'add' ? 'Add New Product' : 'Edit Product'}</h2>
               <button
                 onClick={handleCloseForm}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 dark:text-dark-300 dark:hover:text-dark-100"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -535,7 +499,7 @@ const Products = () => {
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                     Product Name*
                   </label>
                   <input
@@ -543,13 +507,13 @@ const Products = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                     Barcode*
                   </label>
                   <div className="flex items-center">
@@ -558,16 +522,16 @@ const Products = () => {
                       name="barcode"
                       value={formData.barcode}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowScanner(true)}
-                      className="border border-l-0 border-gray-300 bg-gray-100 p-2 rounded-r-md hover:bg-gray-200"
+                      className="border border-l-0 border-gray-300 dark:border-dark-500 bg-gray-100 dark:bg-dark-600 p-2 rounded-r-md hover:bg-gray-200 dark:hover:bg-dark-500 transition-colors duration-150"
                       title="Scan Barcode"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600 dark:text-dark-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
@@ -576,7 +540,7 @@ const Products = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                     Price* ({settings?.currency || 'DH'})
                   </label>
                   <input
@@ -586,13 +550,13 @@ const Products = () => {
                     onChange={handleInputChange}
                     step="0.01"
                     min="0"
-                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                     Category*
                   </label>
                   <div className="flex space-x-2">
@@ -600,7 +564,7 @@ const Products = () => {
                       name="categoryId"
                       value={formData.categoryId}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                       required
                     >
                       <option value="">Select a category</option>
@@ -613,7 +577,7 @@ const Products = () => {
                     <button
                       type="button"
                       onClick={() => setShowCategoryPrompt(true)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-md flex-shrink-0"
+                      className="bg-gray-200 hover:bg-gray-300 dark:bg-dark-500 dark:hover:bg-dark-400 text-gray-800 dark:text-dark-200 px-3 py-2 rounded-md flex-shrink-0 transition-colors duration-150"
                     >
                       + New
                     </button>
@@ -621,7 +585,7 @@ const Products = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                     Stock
                   </label>
                   <input
@@ -631,16 +595,16 @@ const Products = () => {
                     onChange={handleInputChange}
                     min="0"
                     step="1"
-                    className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Image2
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
+                    Product Image
                   </label>
                   <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 h-20 w-20 border rounded-md overflow-hidden bg-gray-50 flex items-center justify-center">
+                    <div className="flex-shrink-0 h-20 w-20 border border-gray-200 dark:border-dark-600 rounded-md overflow-hidden bg-gray-50 dark:bg-dark-600 flex items-center justify-center">
                       {selectedImagePreview ? (
                         <img 
                           src={selectedImagePreview} 
@@ -648,7 +612,7 @@ const Products = () => {
                           className="h-10 w-10" 
                         />
                       ) : (
-                        <span className="text-gray-400">Image</span>
+                        <span className="text-gray-400 dark:text-dark-400">Image</span>
                       )}
                     </div>
                     <div className="flex-1">
@@ -657,9 +621,9 @@ const Products = () => {
                         accept="image/*"
                         ref={fileInputRef}
                         onChange={handleImageChange}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        className="block w-full text-sm text-gray-500 dark:text-dark-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/40 transition-colors duration-150"
                       />
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-gray-500 dark:text-dark-400">
                         Recommended: Square images under 1MB
                       </p>
                     </div>
@@ -668,7 +632,7 @@ const Products = () => {
               </div>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
                   Description
                 </label>
                 <textarea
@@ -676,7 +640,7 @@ const Products = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="3"
-                  className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                 ></textarea>
               </div>
               
@@ -684,214 +648,18 @@ const Products = () => {
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
+                  className="bg-gray-300 hover:bg-gray-400 dark:bg-dark-500 dark:hover:bg-dark-400 text-gray-800 dark:text-dark-200 px-4 py-2 rounded-md transition-colors duration-150"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                  className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
                 >
                   {formMode === 'add' ? 'Add Product' : 'Update Product'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-      
-      {/* Product List */}
-      <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-          <thead className="bg-gray-50 dark:bg-dark-600">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Product</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Barcode</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Stock</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
-            {getPaginatedProducts().map(product => (
-              <tr key={product._id} className={`hover:bg-gray-50 dark:hover:bg-dark-600 ${isLowStock(product) ? 'bg-yellow-50 dark:bg-amber-900/20' : ''} transition-colors duration-150`}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-12 w-12 border border-gray-200 dark:border-dark-600 rounded-md overflow-hidden bg-gray-50 dark:bg-dark-600 flex items-center justify-center">
-                      {product.imageUrl ? (
-                        <img className="max-h-12 max-w-12 object-contain" src={product.imageUrl} alt={product.name} />
-                      ) : (
-                        <span className="text-sm font-medium text-gray-500 dark:text-dark-300">
-                          {product.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-dark-800 dark:text-white">{product.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-dark-300 truncate max-w-xs">{product.description}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.barcode}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{getCategoryName(product.categoryId)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">
-                  {formatCurrency(product.price)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    product.stock <= 0 ? 'bg-red-600 text-white' : 
-                    isLowStock(product) ? 'bg-amber-500 text-white' : 
-                    'bg-green-600 text-white'
-                  }`}>
-                    {product.stock !== undefined ? product.stock : 'N/A'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors duration-150"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product._id)}
-                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-150"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => handleManageStock(product)}
-                    className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors duration-150"
-                  >
-                    Stock
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="bg-white dark:bg-dark-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-dark-500 sm:px-6 mt-4 rounded-lg shadow-soft dark:shadow-none transition-colors duration-200">
-          <div className="flex-1 flex justify-between items-center">
-            {/* Items per page selector */}
-            <div className="flex items-center">
-              <span className="text-sm text-gray-700 dark:text-dark-300 mr-2">
-                Show
-              </span>
-              <select 
-                value={itemsPerPage} 
-                onChange={handleItemsPerPageChange}
-                className="border border-gray-300 dark:border-dark-500 rounded-md text-sm px-2 py-1 bg-white dark:bg-dark-600 text-dark-800 dark:text-white"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="text-sm text-gray-700 dark:text-dark-300 ml-2">
-                per page
-              </span>
-            </div>
-            
-            {/* Pagination info */}
-            <div className="hidden sm:block">
-              <p className="text-sm text-gray-700 dark:text-dark-300">
-                Showing <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
-                <span className="font-medium text-dark-800 dark:text-white">
-                  {Math.min(currentPage * itemsPerPage, getFilteredProducts().length)}
-                </span>{' '}
-                of <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length}</span> products
-              </p>
-            </div>
-            
-            {/* Pagination buttons */}
-            <div className="flex items-center space-x-2">
-              {/* Previous page button */}
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
-                  currentPage === 1
-                    ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
-                    : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
-                }`}
-              >
-                <span className="sr-only">Previous</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </button>
-              
-              {/* Page numbers */}
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    // If we have 5 or fewer pages, show all
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    // If we're near the start
-                    if (i < 4) {
-                      pageNum = i + 1;
-                    } else {
-                      pageNum = totalPages;
-                    }
-                  } else if (currentPage >= totalPages - 2) {
-                    // If we're near the end
-                    if (i === 0) {
-                      pageNum = 1;
-                    } else {
-                      pageNum = totalPages - 4 + i;
-                    }
-                  } else {
-                    // We're in the middle
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  // Special case for ellipsis
-                  if ((totalPages > 5 && i === 3 && currentPage <= 3) || 
-                      (totalPages > 5 && i === 1 && currentPage >= totalPages - 2)) {
-                    return (
-                      <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700 dark:text-dark-300">...</span>
-                    );
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`px-3 py-1 rounded-md text-sm transition-colors duration-150 ${
-                        currentPage === pageNum
-                          ? 'bg-primary-500 dark:bg-primary-600 text-white'
-                          : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              {/* Next page button */}
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
-                  currentPage === totalPages
-                    ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
-                    : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
-                }`}
-              >
-                <span className="sr-only">Next</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -902,6 +670,243 @@ const Products = () => {
           onDetected={handleBarcodeDetected} 
           onClose={() => setShowScanner(false)} 
         />
+      )}
+      
+      {/* Empty state */}
+      {getPaginatedProducts().length === 0 ? (
+        <div className="text-center py-8 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+          <p className="mt-2 text-gray-500 dark:text-dark-300">
+            {searchTerm ? 'No products found matching your search' : 'No products found'}
+          </p>
+          <button
+            onClick={handleAddNew}
+            className="mt-3 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-150"
+          >
+            Add your first product
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Products</h1>
+            <button
+              onClick={handleAddNew}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+            >
+              Add New Product
+            </button>
+          </div>
+          
+          {/* Search */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search products by name, barcode or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Product List */}
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
+              <thead className="bg-gray-50 dark:bg-dark-600">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Product</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Barcode</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Stock</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
+                {getPaginatedProducts().map(product => (
+                  <tr key={product._id} className={`hover:bg-gray-50 dark:hover:bg-dark-600 ${isLowStock(product) ? 'bg-yellow-50 dark:bg-amber-900/20' : ''} transition-colors duration-150`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12 border border-gray-200 dark:border-dark-600 rounded-md overflow-hidden bg-gray-50 dark:bg-dark-600 flex items-center justify-center">
+                          {product.imageUrl ? (
+                            <img className="max-h-12 max-w-12 object-contain" src={product.imageUrl} alt={product.name} />
+                          ) : (
+                            <span className="text-sm font-medium text-gray-500 dark:text-dark-300">
+                              {product.name.substring(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-dark-800 dark:text-white">{product.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-dark-300 truncate max-w-xs">{product.description}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.barcode}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{getCategoryName(product.categoryId)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">
+                      {formatCurrency(product.price)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        product.stock <= 0 ? 'bg-red-600 text-white' : 
+                        isLowStock(product) ? 'bg-amber-500 text-white' : 
+                        'bg-green-600 text-white'
+                      }`}>
+                        {product.stock !== undefined ? product.stock : 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors duration-150"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors duration-150"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => handleManageStock(product)}
+                        className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors duration-150"
+                      >
+                        Stock
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white dark:bg-dark-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-dark-500 sm:px-6 mt-4 rounded-lg shadow-soft dark:shadow-none transition-colors duration-200">
+              <div className="flex-1 flex justify-between items-center">
+                {/* Items per page selector */}
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-700 dark:text-dark-300 mr-2">
+                    Show
+                  </span>
+                  <select 
+                    value={itemsPerPage} 
+                    onChange={handleItemsPerPageChange}
+                    className="border border-gray-300 dark:border-dark-500 rounded-md text-sm px-2 py-1 bg-white dark:bg-dark-600 text-dark-800 dark:text-white"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-sm text-gray-700 dark:text-dark-300 ml-2">
+                    per page
+                  </span>
+                </div>
+                
+                {/* Pagination info */}
+                <div className="hidden sm:block">
+                  <p className="text-sm text-gray-700 dark:text-dark-300">
+                    Showing <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
+                    <span className="font-medium text-dark-800 dark:text-white">
+                      {Math.min(currentPage * itemsPerPage, getFilteredProducts().length)}
+                    </span>{' '}
+                    of <span className="font-medium text-dark-800 dark:text-white">{getFilteredProducts().length}</span> products
+                  </p>
+                </div>
+                
+                {/* Pagination buttons */}
+                <div className="flex items-center space-x-2">
+                  {/* Previous page button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
+                      currentPage === 1
+                        ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
+                        : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
+                    }`}
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  
+                  {/* Page numbers */}
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        // If we have 5 or fewer pages, show all
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        // If we're near the start
+                        if (i < 4) {
+                          pageNum = i + 1;
+                        } else {
+                          pageNum = totalPages;
+                        }
+                      } else if (currentPage >= totalPages - 2) {
+                        // If we're near the end
+                        if (i === 0) {
+                          pageNum = 1;
+                        } else {
+                          pageNum = totalPages - 4 + i;
+                        }
+                      } else {
+                        // We're in the middle
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      // Special case for ellipsis
+                      if ((totalPages > 5 && i === 3 && currentPage <= 3) || 
+                          (totalPages > 5 && i === 1 && currentPage >= totalPages - 2)) {
+                        return (
+                          <span key={`ellipsis-${i}`} className="px-3 py-1 text-sm text-gray-700 dark:text-dark-300">...</span>
+                        );
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1 rounded-md text-sm transition-colors duration-150 ${
+                            currentPage === pageNum
+                              ? 'bg-primary-500 dark:bg-primary-600 text-white'
+                              : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Next page button */}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
+                      currentPage === totalPages
+                        ? 'text-gray-300 dark:text-dark-500 cursor-not-allowed'
+                        : 'text-gray-700 dark:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600'
+                    }`}
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

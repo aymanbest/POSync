@@ -85,8 +85,8 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
           {/* Logo and company name */}
           <div className="flex items-center">
             <NavLink to="/" className="flex-shrink-0 flex items-center app-no-drag">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-soft">
-                <span className="text-white font-bold text-xl">P</span>
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-soft overflow-hidden">
+                <img src="./assets/images/logo.png" alt="ProPOS Logo" className="h-full w-full object-cover" />
               </div>
               <span className="ml-2 text-xl font-display font-semibold text-dark-800 dark:text-white">
                 Pro<span className="text-primary-600 dark:text-primary-400">POS</span>

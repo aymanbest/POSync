@@ -23,8 +23,8 @@ const TitleBar = () => {
     <div className="app-drag-region flex h-10 bg-dark-800 text-white items-center justify-between select-none">
       {/* App icon and title */}
       <div className="flex items-center pl-3">
-        <div className="w-5 h-5 bg-primary-500 rounded mr-2 flex items-center justify-center text-white">
-          <IconSquareLetterX size={14} />
+        <div className="w-5 h-5 rounded mr-2 flex items-center justify-center overflow-hidden">
+          <img src="./assets/images/logo.png" alt="ProPOS Logo" className="h-full w-full object-cover" />
         </div>
         <span className="text-sm font-semibold tracking-wide">{appTitle}</span>
       </div>

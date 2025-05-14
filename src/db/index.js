@@ -35,65 +35,7 @@ db.products.ensureIndex({ fieldName: 'barcode', unique: true });
 db.categories.ensureIndex({ fieldName: 'name', unique: true });
 db.users.ensureIndex({ fieldName: 'username', unique: true });
 
-// Initialize with default admin user if none exists
-db.users.findOne({ role: 'admin' }, (err, adminUser) => {
-  if (!adminUser) {
-    db.users.insert({
-      username: 'admin',
-      password: 'admin', // This should be hashed in production
-      role: 'admin',
-      fullName: 'System Administrator',
-      permissions: [
-        'dashboard',
-        'pos',
-        'products',
-        'categories',
-        'transactions',
-        'reports',
-        'stock',
-        'settings',
-        'staff'
-      ],
-      active: true,
-      createdAt: new Date()
-    });
-  } else if (!adminUser.permissions || adminUser.permissions.length === 0) {
-    // Ensure existing admin user has permissions
-    db.users.update({ _id: adminUser._id }, { 
-      $set: { 
-        permissions: [
-          'dashboard',
-          'pos',
-          'products',
-          'categories',
-          'transactions',
-          'reports',
-          'stock',
-          'settings',
-          'staff'
-        ],
-        active: true,
-        fullName: adminUser.fullName || 'System Administrator'
-      } 
-    });
-  }
-});
-
-// Initialize default settings if none exist
-db.settings.findOne({ _id: 'app-settings' }, (err, settings) => {
-  if (!settings) {
-    db.settings.insert({
-      _id: 'app-settings',
-      businessName: 'My POS Store',
-      address: '123 Main St',
-      phone: '555-123-4567',
-      email: 'info@myposstore.com',
-      currency: 'MAD',
-      taxRate: 7.5,
-      receiptFooter: 'Thank you for your business!',
-      createdAt: new Date()
-    });
-  }
-});
+// No automatic creation of admin user or settings
+// This ensures the setup wizard will appear for fresh installations
 
 module.exports = db; 

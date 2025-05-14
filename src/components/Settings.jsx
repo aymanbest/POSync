@@ -5,6 +5,14 @@ const Settings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [isDevelopmentMode, setIsDevelopmentMode] = useState(false);
+  const [seederState, setSeederState] = useState({
+    enabled: false,
+    numCategories: 10,
+    numProducts: 30,
+    clearExisting: false,
+    isLoading: false
+  });
   const [formData, setFormData] = useState({
     businessName: '',
     address: '',
@@ -19,7 +27,7 @@ const Settings = () => {
     lowStockThreshold: 5 // Default low stock threshold
   });
 
-  // Fetch settings on component mount
+  // Fetch settings and check dev mode on component mount
   useEffect(() => {
     const fetchSettings = async () => {
       setIsLoading(true);
@@ -41,6 +49,10 @@ const Settings = () => {
           receiptFooter: settingsData.receiptFooter || '',
           lowStockThreshold: settingsData.lowStockThreshold || 5
         });
+
+        // Check if development mode is enabled
+        const devMode = await window.api.env.isDevelopmentMode();
+        setIsDevelopmentMode(devMode);
       } catch (error) {
         console.error('Error fetching settings:', error);
         showNotification('Failed to load settings', 'error');
@@ -130,7 +142,7 @@ const Settings = () => {
     }
     
     // Second confirmation with specific text to prevent accidental resets
-    if (!window.confirm('Please confirm again: All your data will be permanently erased and the application will be reset to factory defaults.')) {
+    if (!window.confirm('Please confirm again: All your data will be permanently erased and the setup wizard will appear on next launch.')) {
       return;
     }
     
@@ -138,11 +150,15 @@ const Settings = () => {
       const result = await window.api.database.resetDatabase();
       
       if (result.success) {
-        showNotification('Database has been reset to factory defaults. The application will reload.', 'success');
+        showNotification('Database has been reset. Please restart the application to begin setup.', 'success');
         
-        // Reload the application after a short delay to ensure the notification is seen
+        // Clear local storage to remove any cached user data
+        localStorage.removeItem('user');
+        
+        // Inform the user they need to restart the app
         setTimeout(() => {
-          window.location.reload();
+          alert('The database has been reset. Please close and restart the application to complete the setup process.');
+          window.close(); // Attempt to close the app window
         }, 3000);
       } else {
         showNotification(result.message || 'Reset failed', 'error');
@@ -150,6 +166,54 @@ const Settings = () => {
     } catch (error) {
       console.error('Error resetting database:', error);
       showNotification('Reset failed: An unexpected error occurred', 'error');
+    }
+  };
+
+  const handleSeederChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setSeederState(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : 
+             (name === 'numCategories' || name === 'numProducts') ? parseInt(value) || 0 : value
+    }));
+  };
+
+  const handleRunSeeder = async () => {
+    // Confirm before proceeding
+    if (!window.confirm('This will generate sample data for development. Continue?')) {
+      return;
+    }
+    
+    setSeederState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      // Run the seeder with the configured options
+      const result = await window.api.database.seedDatabase({
+        enabled: true, // Enable for this call
+        numCategories: seederState.numCategories,
+        numProducts: seederState.numProducts,
+        clearExisting: seederState.clearExisting,
+        seedPriceMin: 5,
+        seedPriceMax: 500,
+        seedStockMin: 1, 
+        seedStockMax: 100
+      });
+      
+      if (result.success) {
+        showNotification('Sample data generated successfully. Refreshing page...', 'success');
+        
+        // Reload after a short delay to show the notification
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        showNotification(result.message || 'Failed to generate sample data', 'error');
+      }
+    } catch (error) {
+      console.error('Error running seeder:', error);
+      showNotification('Failed to generate sample data: ' + (error.message || 'Unknown error'), 'error');
+    } finally {
+      setSeederState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -442,6 +506,94 @@ const Settings = () => {
           </div>
         </div>
       </div>
+      
+      {/* Developer Tools Section - Only shown when isDevelopmentMode is true */}
+      {isDevelopmentMode && (
+        <div className="col-span-1 md:col-span-2 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 mt-6 transition-colors duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-dark-800 dark:text-white">Developer Tools</h2>
+            <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-500 text-xs rounded-full">
+              Development Only
+            </span>
+          </div>
+          
+          <div className="border-t border-gray-200 dark:border-dark-600 pt-4">
+            <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Sample Data Generator</h3>
+            <p className="text-sm text-gray-600 dark:text-dark-300 mb-4">
+              Generate sample products and categories for development and testing purposes.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                  Number of Categories
+                </label>
+                <input
+                  type="number"
+                  name="numCategories"
+                  value={seederState.numCategories}
+                  onChange={handleSeederChange}
+                  min="1"
+                  max="50"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                  Number of Products
+                </label>
+                <input
+                  type="number"
+                  name="numProducts"
+                  value={seederState.numProducts}
+                  onChange={handleSeederChange}
+                  min="1"
+                  max="100"
+                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="clearExisting"
+                  name="clearExisting"
+                  checked={seederState.clearExisting}
+                  onChange={handleSeederChange}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="clearExisting" className="ml-2 block text-sm text-gray-700 dark:text-dark-200">
+                  Clear existing products and categories
+                </label>
+              </div>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                Warning: This will delete all existing products and categories before generating new ones.
+              </p>
+            </div>
+            
+            <button
+              type="button"
+              onClick={handleRunSeeder}
+              disabled={seederState.isLoading}
+              className="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {seederState.isLoading ? (
+                <>
+                  <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                'Generate Sample Data'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
