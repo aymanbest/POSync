@@ -15,7 +15,12 @@ const SetupWizard = ({ onComplete }) => {
     adminPassword: '',
     adminConfirmPassword: '',
     defaultEmployee: 'Cashier',
-    lowStockThreshold: 5
+    lowStockThreshold: 5,
+    useNumPad: true,
+    paymentMethods: {
+      cash: true,
+      card: true
+    }
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -119,6 +124,8 @@ const SetupWizard = ({ onComplete }) => {
           taxType: formData.taxType,
           defaultEmployee: formData.defaultEmployee,
           lowStockThreshold: formData.lowStockThreshold,
+          useNumPad: formData.useNumPad,
+          paymentMethods: formData.paymentMethods,
           isSetupComplete: true
         });
         
@@ -382,6 +389,80 @@ const SetupWizard = ({ onComplete }) => {
                 <option value="included">Included in price</option>
                 <option value="disabled">Disabled</option>
               </select>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="useNumPad"
+                name="useNumPad"
+                checked={formData.useNumPad}
+                onChange={handleChange}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="useNumPad" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Use Number Pad for Cash Payments
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 ml-6">
+              Enables a calculator-style number pad for entering cash payment amounts
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Payment Methods
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Select which payment methods to enable in the POS
+            </p>
+            
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="paymentMethodCash"
+                  name="paymentMethodCash"
+                  checked={formData.paymentMethods.cash}
+                  onChange={(e) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      paymentMethods: {
+                        ...prev.paymentMethods,
+                        cash: e.target.checked
+                      }
+                    }));
+                  }}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="paymentMethodCash" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Cash
+                </label>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="paymentMethodCard"
+                  name="paymentMethodCard"
+                  checked={formData.paymentMethods.card}
+                  onChange={(e) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      paymentMethods: {
+                        ...prev.paymentMethods,
+                        card: e.target.checked
+                      }
+                    }));
+                  }}
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label htmlFor="paymentMethodCard" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Card/Credit Card
+                </label>
+              </div>
             </div>
           </div>
         </div>

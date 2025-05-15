@@ -12,7 +12,8 @@ import {
   IconCreditCard, 
   IconDiscount, 
   IconX,
-  IconReceiptTax
+  IconReceiptTax,
+  IconBackspace
 } from '@tabler/icons-react';
 
 const POS = () => {
@@ -45,9 +46,28 @@ const POS = () => {
         const categoriesData = await window.api.database.getCategories();
         const settingsData = await window.api.settings.getSettings();
         
+        // Log settings for debugging
+        console.log('Settings loaded:', settingsData);
+        console.log('useNumPad setting:', settingsData?.useNumPad);
+        console.log('paymentMethods setting:', settingsData?.paymentMethods);
+        
         setProducts(productsData);
         setCategories(categoriesData);
         setSettings(settingsData);
+        
+        // Set default payment method based on available methods
+        if (settingsData?.paymentMethods) {
+          // If only card is enabled, default to card
+          if (!settingsData.paymentMethods.cash && settingsData.paymentMethods.card) {
+            setPaymentMethod('card');
+            // We'll set the payment amount once we have products loaded and cart initialized
+          }
+          // If only cash is enabled, default to cash
+          else if (settingsData.paymentMethods.cash && !settingsData.paymentMethods.card) {
+            setPaymentMethod('cash');
+          }
+          // If both are disabled, we'll still show cash as fallback
+        }
       } catch (error) {
         console.error('Error fetching initial data:', error);
         showNotification('Error loading data', 'error');
@@ -56,6 +76,14 @@ const POS = () => {
 
     fetchData();
   }, []);
+
+  // Set payment amount for card when it's the only option or when switching to card
+  useEffect(() => {
+    if (paymentMethod === 'card') {
+      const total = calculateTotal();
+      setPaymentAmount(total.toString());
+    }
+  }, [paymentMethod, cart, discount, settings?.taxRate, settings?.taxType]);
 
   // Check if containers need scroll indicators
   useEffect(() => {
@@ -465,7 +493,7 @@ const POS = () => {
   return (
     <div className="h-full w-full flex flex-col md:flex-row overflow-hidden">
       {/* Left Side - Product List & Categories */}
-      <div className="w-full md:w-3/5 flex flex-col h-[50vh] md:h-screen">
+      <div className="w-full md:w-3/5 flex flex-col h-[40vh] md:h-screen">
         {/* Search & Barcode Scanner - Fixed height */}
         <div className="flex-shrink-0 p-4 bg-white dark:bg-dark-700 shadow dark:shadow-none rounded-xl mb-4 transition-colors duration-200">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -587,10 +615,10 @@ const POS = () => {
       </div>
       
       {/* Right Side - Cart */}
-      <div className="w-full md:w-2/5 flex flex-col h-[50vh] md:h-screen md:ml-4 mt-4 md:mt-0">
-        <div className="bg-white dark:bg-dark-700 shadow-soft dark:shadow-none rounded-xl flex flex-col h-full overflow-hidden transition-colors duration-200">
+      <div className="w-full md:w-2/5 flex flex-col h-[60vh] md:h-screen md:ml-4 mt-4 md:mt-0">
+        <div className="bg-white dark:bg-dark-700 shadow-soft dark:shadow-none rounded-xl flex flex-col overflow-hidden transition-colors duration-200">
           {/* Cart Header - Fixed height */}
-          <div className="flex-shrink-0 p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
+          <div className="flex-shrink-0 py-3 px-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
             <h2 className="text-lg font-display font-semibold text-dark-800 dark:text-white flex items-center">
               <IconShoppingCart size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
               Current Cart {cart.length > 0 && `(${cart.length})`}
@@ -608,11 +636,12 @@ const POS = () => {
             </button>
           </div>
           
-          {/* Cart Items - Take remaining height with scrolling but with max-height */}
+          {/* Cart Items - Fixed height container */}
           <div 
             id="cart-items-container" 
             ref={cartContainerRef}
-            className="flex-1 overflow-y-auto p-4 border-b border-gray-200 dark:border-dark-600 max-h-[25vh] md:max-h-[35vh] lg:max-h-[40vh] custom-scrollbar"
+            className="flex-shrink-0 overflow-y-auto p-4 border-b border-gray-200 dark:border-dark-600 custom-scrollbar"
+            style={{ height: '220px' }}
           >
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-dark-500 dark:text-dark-300">
@@ -623,9 +652,9 @@ const POS = () => {
                 <p className="text-sm mt-1">Add products by scanning or clicking on them</p>
               </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {cart.map(item => (
-                  <li key={item._id} className="bg-gray-50 dark:bg-dark-600 rounded-lg p-3 flex items-center justify-between transition-colors duration-150">
+                  <li key={item._id} className="bg-gray-50 dark:bg-dark-600 rounded-lg p-2 flex items-center justify-between transition-colors duration-150">
                     <div className="flex-grow mr-3">
                       <p className="font-medium text-dark-800 dark:text-white truncate">{item.name}</p>
                       <p className="text-sm text-dark-500 dark:text-dark-300">{formatCurrency(item.price)} × {item.quantity}</p>
@@ -666,9 +695,9 @@ const POS = () => {
             )}
           </div>
           
-          {/* Cart Summary - Fixed height and guaranteed visibility */}
-          <div className="flex-shrink-0 p-4 bg-white dark:bg-dark-700">
-            <div className="mb-4 space-y-2">
+          {/* Cart Total - Fixed section */}
+          <div className="flex-shrink-0 py-2 px-4 bg-white dark:bg-dark-700 border-b border-gray-200 dark:border-dark-600">
+            <div className="space-y-1">
               <div className="flex justify-between">
                 <span className="text-dark-600 dark:text-dark-300">Subtotal:</span>
                 <span className="text-dark-800 dark:text-white font-medium">{formatCurrency(calculateSubtotal())}</span>
@@ -695,19 +724,23 @@ const POS = () => {
                 <span className="text-dark-800 dark:text-white font-medium">{formatCurrency(calculateTax())}</span>
               </div>
               
-              <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-dark-500">
+              <div className="flex justify-between pt-1 border-t border-gray-200 dark:border-dark-500">
                 <span className="text-dark-800 dark:text-white font-bold">Total:</span>
                 <span className="text-dark-800 dark:text-white font-bold">{formatCurrency(calculateTotal())}</span>
               </div>
             </div>
+          </div>
+          
+          {/* Payment Method Selection */}
+          <div className="flex-shrink-0 py-2 px-4">
+            <label className="block text-dark-700 dark:text-dark-200 text-sm font-medium mb-2">Payment Method</label>
             
-            {/* Payment Method Selection */}
-            <div className="mb-4">
-              <label className="block text-dark-700 dark:text-dark-200 text-sm font-medium mb-2">Payment Method</label>
+            {/* When both payment methods are enabled, or when no specific configuration exists */}
+            {((!settings?.paymentMethods || (settings.paymentMethods.cash && settings.paymentMethods.card))) && (
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  className={`flex-1 py-2.5 rounded-lg flex items-center justify-center transition-colors duration-150 ${
+                  className={`flex-1 py-2 rounded-lg flex items-center justify-center transition-colors duration-150 ${
                     paymentMethod === 'cash'
                       ? 'bg-primary-500 dark:bg-primary-600 text-white'
                       : 'bg-white dark:bg-dark-600 border border-gray-200 dark:border-dark-500 text-dark-700 dark:text-dark-200 hover:bg-gray-50 dark:hover:bg-dark-500'
@@ -716,9 +749,10 @@ const POS = () => {
                 >
                   <IconCash size={18} className="mr-2" /> Cash
                 </button>
+                
                 <button
                   type="button"
-                  className={`flex-1 py-2.5 rounded-lg flex items-center justify-center transition-colors duration-150 ${
+                  className={`flex-1 py-2 rounded-lg flex items-center justify-center transition-colors duration-150 ${
                     paymentMethod === 'card'
                       ? 'bg-primary-500 dark:bg-primary-600 text-white'
                       : 'bg-white dark:bg-dark-600 border border-gray-200 dark:border-dark-500 text-dark-700 dark:text-dark-200 hover:bg-gray-50 dark:hover:bg-dark-500'
@@ -731,14 +765,103 @@ const POS = () => {
                   <IconCreditCard size={18} className="mr-2" /> Card
                 </button>
               </div>
-            </div>
+            )}
             
-            {/* Cash payment input (only show for cash payments) */}
-            {paymentMethod === 'cash' && (
-              <div className="mb-4">
-                <label htmlFor="payment-amount" className="block text-dark-700 dark:text-dark-200 text-sm font-medium mb-2">
-                  Amount Received
-                </label>
+            {/* When only cash is enabled */}
+            {settings?.paymentMethods && settings.paymentMethods.cash && !settings.paymentMethods.card && (
+              <div className="py-2 px-4 bg-white dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-lg flex items-center">
+                <IconCash size={18} className="mr-2 text-primary-500 dark:text-primary-400" /> 
+                <span className="text-dark-700 dark:text-dark-200">Cash Payment</span>
+              </div>
+            )}
+            
+            {/* When only card is enabled */}
+            {settings?.paymentMethods && !settings.paymentMethods.cash && settings.paymentMethods.card && (
+              <div className="py-2 px-4 bg-white dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-lg flex items-center">
+                <IconCreditCard size={18} className="mr-2 text-primary-500 dark:text-primary-400" /> 
+                <span className="text-dark-700 dark:text-dark-200">Card Payment</span>
+              </div>
+            )}
+            
+            {/* Show message if no payment methods are enabled */}
+            {settings?.paymentMethods && 
+             !settings.paymentMethods.cash && 
+             !settings.paymentMethods.card && (
+              <div className="w-full text-center py-2 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                No payment methods enabled. Please update settings.
+              </div>
+            )}
+          </div>
+          
+          {/* Cash payment input - Compact Numpad */}
+          {paymentMethod === 'cash' && (
+            <div className="flex-shrink-0 px-4 pb-2">
+              <label htmlFor="payment-amount" className="block text-dark-700 dark:text-dark-200 text-sm font-medium mb-1">
+                Amount Received
+              </label>
+              {settings?.useNumPad !== false ? (
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <input
+                      id="payment-amount"
+                      type="text"
+                      className="block w-full py-2 px-3 bg-white dark:bg-dark-600 text-dark-800 dark:text-white border border-gray-200 dark:border-dark-500 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400 transition-colors duration-200 text-right"
+                      value={paymentAmount}
+                      readOnly
+                      placeholder="0.00"
+                    />
+                    <button
+                      type="button"
+                      className="whitespace-nowrap py-2 px-3 bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg"
+                      onClick={() => setPaymentAmount(calculateTotal().toString())}
+                    >
+                      Exact
+                    </button>
+                  </div>
+                  
+                  {/* Compact Number Pad */}
+                  <div className="grid grid-cols-4 gap-1">
+                    {[1, 2, 3, 'C', 4, 5, 6, '⌫', 7, 8, 9, '+', 0, '00', '.', '='].map((btn) => (
+                      <button
+                        key={btn}
+                        type="button"
+                        className={`py-2 ${
+                          btn === 'C' 
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50' 
+                            : btn === '=' 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                            : btn === '+' || btn === '⌫'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                            : 'bg-white dark:bg-dark-600 border border-gray-200 dark:border-dark-500 hover:bg-gray-100 dark:hover:bg-dark-500 text-dark-800 dark:text-white'
+                        } rounded-lg transition-colors duration-150 font-medium text-lg`}
+                        onClick={() => {
+                          if (btn === 'C') {
+                            setPaymentAmount('');
+                          } else if (btn === '⌫') {
+                            setPaymentAmount((prev) => prev.slice(0, -1));
+                          } else if (btn === '=') {
+                            setPaymentAmount(calculateTotal().toString());
+                          } else if (btn === '+') {
+                            const currentAmount = parseFloat(paymentAmount) || 0;
+                            const total = calculateTotal();
+                            if (currentAmount < total) {
+                              setPaymentAmount(total.toString());
+                            }
+                          } else if (btn === '.') {
+                            if (!paymentAmount.includes('.')) {
+                              setPaymentAmount((prev) => prev + '.');
+                            }
+                          } else {
+                            setPaymentAmount((prev) => prev + btn.toString());
+                          }
+                        }}
+                      >
+                        {btn === '⌫' ? <IconBackspace size={18} className="mx-auto" /> : btn}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div className="flex items-center space-x-2">
                   <input
                     id="payment-amount"
@@ -758,42 +881,42 @@ const POS = () => {
                     Exact
                   </button>
                 </div>
-                
-                {/* Show change calculation when valid amount is entered */}
-                {paymentAmount && parseFloat(paymentAmount) >= calculateTotal() && (
-                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
-                    Change: {formatCurrency(calculateChange())}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Checkout Button */}
-            <button
-              onClick={handleCheckout}
-              disabled={cart.length === 0 || isProcessing || (paymentMethod === 'cash' && (!paymentAmount || parseFloat(paymentAmount) < calculateTotal()))}
-              className={`w-full py-3 rounded-lg flex items-center justify-center font-medium transition-colors duration-150 ${
-                cart.length === 0 || isProcessing || (paymentMethod === 'cash' && (!paymentAmount || parseFloat(paymentAmount) < calculateTotal()))
-                  ? 'bg-gray-300 dark:bg-dark-500 text-dark-500 dark:text-dark-400 cursor-not-allowed'
-                  : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-800 text-white'
-              }`}
-            >
-              {isProcessing ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <IconReceiptTax size={18} className="mr-2" />
-                  Complete Sale
-                </>
               )}
-            </button>
-          </div>
+              
+              {/* Show change calculation when valid amount is entered */}
+              {paymentAmount && parseFloat(paymentAmount) >= calculateTotal() && (
+                <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg">
+                  Change: {formatCurrency(calculateChange())}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Checkout Button */}
+          <button
+            onClick={handleCheckout}
+            disabled={cart.length === 0 || isProcessing || (paymentMethod === 'cash' && (!paymentAmount || parseFloat(paymentAmount) < calculateTotal()))}
+            className={`flex-shrink-0 w-full py-3 rounded-lg flex items-center justify-center font-medium transition-colors duration-150 ${
+              cart.length === 0 || isProcessing || (paymentMethod === 'cash' && (!paymentAmount || parseFloat(paymentAmount) < calculateTotal()))
+                ? 'bg-gray-300 dark:bg-dark-500 text-dark-500 dark:text-dark-400 cursor-not-allowed'
+                : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-800 text-white'
+            }`}
+          >
+            {isProcessing ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </>
+            ) : (
+              <>
+                <IconReceiptTax size={18} className="mr-2" />
+                Complete Sale
+              </>
+            )}
+          </button>
         </div>
       </div>
       

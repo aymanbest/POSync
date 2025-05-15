@@ -24,7 +24,12 @@ const Settings = () => {
     taxName: 'Tax',
     taxDescription: '',
     receiptFooter: '',
-    lowStockThreshold: 5 // Default low stock threshold
+    lowStockThreshold: 5, // Default low stock threshold
+    useNumPad: true, // Default to use numpad
+    paymentMethods: {
+      cash: true,
+      card: true
+    }
   });
 
   // Fetch settings and check dev mode on component mount
@@ -47,7 +52,9 @@ const Settings = () => {
           taxName: settingsData.taxName || 'Tax',
           taxDescription: settingsData.taxDescription || '',
           receiptFooter: settingsData.receiptFooter || '',
-          lowStockThreshold: settingsData.lowStockThreshold || 5
+          lowStockThreshold: settingsData.lowStockThreshold || 5,
+          useNumPad: settingsData.useNumPad !== undefined ? settingsData.useNumPad : true,
+          paymentMethods: settingsData.paymentMethods || { cash: true, card: true }
         });
 
         // Check if development mode is enabled
@@ -70,10 +77,25 @@ const Settings = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    
+    // Handle payment method checkboxes
+    if (name.startsWith('paymentMethod.')) {
+      const method = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        paymentMethods: {
+          ...prev.paymentMethods,
+          [method]: checked
+        }
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'taxRate' ? parseFloat(value) || 0 : 
+      [name]: type === 'checkbox' ? checked :
+              name === 'taxRate' ? parseFloat(value) || 0 : 
               name === 'lowStockThreshold' ? parseInt(value) || 0 : 
               value
     }));
@@ -348,6 +370,69 @@ const Settings = () => {
                   <p className="text-xs text-gray-500 dark:text-dark-300 mt-1">
                     You'll receive notifications when product stock falls below this quantity
                   </p>
+                </div>
+              </div>
+
+              {/* POS Settings */}
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
+                <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">POS Settings</h3>
+                
+                <div className="mb-3">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="useNumPad"
+                      name="useNumPad"
+                      checked={formData.useNumPad}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="useNumPad" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                      Use Number Pad for Cash Payments
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-1 ml-6">
+                    Enable calculator-style number pad for entering cash payment amounts
+                  </p>
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                    Payment Methods
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mb-2">
+                    Select which payment methods to enable in the POS
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="paymentMethod.cash"
+                        name="paymentMethod.cash"
+                        checked={formData.paymentMethods.cash}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="paymentMethod.cash" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                        Cash
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="paymentMethod.card"
+                        name="paymentMethod.card"
+                        checked={formData.paymentMethods.card}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="paymentMethod.card" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                        Card/Credit Card
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
               
