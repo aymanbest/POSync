@@ -16,7 +16,9 @@ import {
   IconHistory,
   IconReportAnalytics,
   IconPackage,
-  IconUsers
+  IconUsers,
+  IconChevronDown,
+  IconApps
 } from '@tabler/icons-react';
 import LowStockNotification from './LowStockNotification';
 
@@ -31,6 +33,10 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
   const location = useLocation();
   const [settings, setSettings] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [inventoryDropdownOpen, setInventoryDropdownOpen] = useState(false);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const inventoryDropdownRef = useRef(null);
+  const adminDropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -52,20 +58,49 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
   // Close mobile menu when location changes
   useEffect(() => {
     setMobileMenuOpen(false);
+    setInventoryDropdownOpen(false);
+    setAdminDropdownOpen(false);
   }, [location]);
 
-  // Define menu items with correct icon references
-  const menuItems = [
-    { path: '/', label: 'Dashboard', icon: <IconDashboard size={20} />, permission: 'dashboard' },
-    { path: '/pos', label: 'POS', icon: <IconCash size={20} />, permission: 'pos' },
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (inventoryDropdownRef.current && !inventoryDropdownRef.current.contains(event.target)) {
+        setInventoryDropdownOpen(false);
+      }
+      if (adminDropdownRef.current && !adminDropdownRef.current.contains(event.target)) {
+        setAdminDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Group menu items by category
+  const inventoryItems = [
     { path: '/products', label: 'Products', icon: <IconBox size={20} />, permission: 'products' },
     { path: '/categories', label: 'Categories', icon: <IconTag size={20} />, permission: 'categories' },
-    { path: '/transactions', label: 'Transactions', icon: <IconHistory size={20} />, permission: 'transactions' },
-    { path: '/reports', label: 'Reports', icon: <IconReportAnalytics size={20} />, permission: 'reports' },
     { path: '/stock-management', label: 'Stock', icon: <IconPackage size={20} />, permission: 'stock' },
-    { path: '/settings', label: 'Settings', icon: <IconSettings size={20} />, permission: 'settings' },
-    { path: '/staff', label: 'Staff', icon: <IconUsers size={20} />, permission: 'staff' }
   ];
+
+  const adminItems = [
+    { path: '/settings', label: 'Settings', icon: <IconSettings size={20} />, permission: 'settings' },
+    { path: '/staff', label: 'Staff', icon: <IconUsers size={20} />, permission: 'staff' },
+    { path: '/reports', label: 'Reports', icon: <IconReportAnalytics size={20} />, permission: 'reports' },
+  ];
+
+  const mainItems = [
+    { path: '/', label: 'Dashboard', icon: <IconDashboard size={20} />, permission: 'dashboard' },
+    { path: '/pos', label: 'POS', icon: <IconCash size={20} />, permission: 'pos' },
+    { path: '/transactions', label: 'Transactions', icon: <IconHistory size={20} />, permission: 'transactions' },
+  ];
+
+  // Check if user has access to any items in a group
+  const hasInventoryAccess = inventoryItems.some(item => hasPermission(user, item.permission));
+  const hasAdminAccess = adminItems.some(item => hasPermission(user, item.permission));
 
   // Handle dark mode toggle with debug
   const handleDarkModeToggle = () => {
@@ -96,106 +131,95 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
 
           {/* Desktop navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-              }
-            >
-              <IconDashboard size={18} className="mr-1" /> Dashboard
-            </NavLink>
-            
-            {hasPermission(user, 'pos') && (
-              <NavLink
-                to="/pos"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconCash size={18} className="mr-1" /> POS
-              </NavLink>
+            {/* Main items */}
+            {mainItems
+              .filter(item => hasPermission(user, item.permission))
+              .map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
+                  }
+                >
+                  <span className="mr-1">{item.icon}</span> {item.label}
+                </NavLink>
+              ))
+            }
+
+            {/* Inventory dropdown */}
+            {hasInventoryAccess && (
+              <div className="relative" ref={inventoryDropdownRef}>
+                <button
+                  onClick={() => setInventoryDropdownOpen(!inventoryDropdownOpen)}
+                  className={`${location.pathname.includes('/products') || location.pathname.includes('/categories') || location.pathname.includes('/stock') ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`}
+                >
+                  <IconBox size={18} className="mr-1" /> Inventory <IconChevronDown size={16} className={`ml-1 transition-transform ${inventoryDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {inventoryDropdownOpen && (
+                  <div className="absolute left-0 mt-1 w-48 bg-white dark:bg-dark-700 rounded-md shadow-lg py-1 z-20 border border-gray-100 dark:border-dark-600">
+                    {inventoryItems
+                      .filter(item => hasPermission(user, item.permission))
+                      .map((item) => (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          className={({ isActive }) => 
+                            `block px-4 py-2 text-sm ${
+                              isActive
+                                ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
+                                : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
+                            } flex items-center`
+                          }
+                        >
+                          <span className="mr-2">{item.icon}</span> {item.label}
+                        </NavLink>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
             )}
-            
-            {hasPermission(user, 'products') && (
-              <NavLink
-                to="/products"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconBox size={18} className="mr-1" /> Products
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'categories') && (
-              <NavLink
-                to="/categories"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconTag size={18} className="mr-1" /> Categories
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'transactions') && (
-              <NavLink
-                to="/transactions"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconHistory size={18} className="mr-1" /> Transactions
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'reports') && (
-              <NavLink
-                to="/reports"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconReportAnalytics size={18} className="mr-1" /> Reports
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'stock') && (
-              <NavLink
-                to="/stock-management"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconPackage size={18} className="mr-1" /> Stock
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'settings') && (
-              <NavLink
-                to="/settings"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconSettings size={18} className="mr-1" /> Settings
-              </NavLink>
-            )}
-            
-            {hasPermission(user, 'staff') && (
-              <NavLink
-                to="/staff"
-                className={({ isActive }) =>
-                  `${isActive ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`
-                }
-              >
-                <IconUsers size={18} className="mr-1" /> Staff
-              </NavLink>
+
+            {/* Admin dropdown */}
+            {hasAdminAccess && (
+              <div className="relative" ref={adminDropdownRef}>
+                <button
+                  onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
+                  className={`${location.pathname.includes('/settings') || location.pathname.includes('/staff') || location.pathname.includes('/reports') ? 'border-primary-500 dark:border-primary-400 text-primary-600 dark:text-primary-400' : 'border-transparent text-dark-500 dark:text-dark-300 hover:text-dark-700 dark:hover:text-dark-100 hover:border-gray-300 dark:hover:border-dark-500'} px-3 py-2 text-sm font-medium border-b-2 flex items-center transition-colors duration-150`}
+                >
+                  <IconApps size={18} className="mr-1" /> Admin <IconChevronDown size={16} className={`ml-1 transition-transform ${adminDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {adminDropdownOpen && (
+                  <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-700 rounded-md shadow-lg py-1 z-20 border border-gray-100 dark:border-dark-600">
+                    {adminItems
+                      .filter(item => hasPermission(user, item.permission))
+                      .map((item) => (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          className={({ isActive }) => 
+                            `block px-4 py-2 text-sm ${
+                              isActive
+                                ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
+                                : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
+                            } flex items-center`
+                          }
+                        >
+                          <span className="mr-2">{item.icon}</span> {item.label}
+                        </NavLink>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
           {/* Right side menu (dark mode toggle, notifications, profile) */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {/* Dark mode toggle */}
             <button
               onClick={handleDarkModeToggle}
@@ -209,28 +233,32 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
             {/* Notifications */}
             {settings && <LowStockNotification settings={settings} user={user} />}
             
-            {/* User profile dropdown */}
-            <div className="relative">
-              <div className="flex items-center">
-                <div className="hidden sm:flex sm:flex-col sm:items-end mr-2">
-                  <span className="text-sm font-medium text-dark-800 dark:text-white">{user.username}</span>
-                  <span className="text-xs text-dark-500 dark:text-dark-300">{user.role}</span>
-                </div>
-                <div className="h-9 w-9 rounded-full bg-primary-100 dark:bg-dark-600 flex items-center justify-center text-primary-700 dark:text-primary-400">
-                  <IconUser size={20} />
-                </div>
-                <button
-                  onClick={onLogout}
-                  className="ml-2 p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none transition-colors duration-200"
-                  aria-label="Logout"
-                >
-                  <IconLogout size={20} />
-                </button>
+            {/* Divider */}
+            <div className="hidden sm:block h-6 w-px bg-gray-300 dark:bg-dark-500"></div>
+            
+            {/* User profile section */}
+            <div className="relative flex items-center">
+              <div className="hidden sm:flex sm:flex-col sm:items-end mr-3">
+                <span className="text-sm font-medium text-dark-800 dark:text-white">{user.username}</span>
+                <span className="text-xs text-dark-500 dark:text-dark-300">{user.role}</span>
+              </div>
+              <div className="h-9 w-9 rounded-full bg-primary-100 dark:bg-dark-600 flex items-center justify-center text-primary-700 dark:text-primary-400 border-2 border-transparent hover:border-primary-200 dark:hover:border-primary-800 transition-colors duration-200">
+                <IconUser size={20} />
               </div>
             </div>
             
+            {/* Logout button */}
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none transition-colors duration-200"
+              aria-label="Logout"
+              title="Logout"
+            >
+              <IconLogout size={20} />
+            </button>
+            
             {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center ml-1">
               <button
                 onClick={toggleMobileMenu}
                 className="p-2 rounded-md text-dark-500 dark:text-dark-100 hover:bg-gray-100 dark:hover:bg-dark-600 focus:outline-none transition-colors duration-200"
@@ -247,8 +275,9 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
       {/* Mobile menu */}
       <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-dark-700 border-t border-gray-100 dark:border-dark-600">
-          {menuItems
-            .filter(item => !item.permission || hasPermission(user, item.permission))
+          {/* Main items */}
+          {mainItems
+            .filter(item => hasPermission(user, item.permission))
             .map((item) => (
               <NavLink
                 key={item.path}
@@ -264,7 +293,64 @@ const Navbar = ({ user, onLogout, darkMode, toggleDarkMode }) => {
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
               </NavLink>
-            ))}
+            ))
+          }
+
+          {/* Inventory section */}
+          {hasInventoryAccess && (
+            <>
+              <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-dark-400 uppercase tracking-wider">
+                Inventory
+              </div>
+              {inventoryItems
+                .filter(item => hasPermission(user, item.permission))
+                .map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) => 
+                      `block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 ${
+                        isActive
+                          ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
+                          : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
+                      }`
+                    }
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))
+              }
+            </>
+          )}
+
+          {/* Admin section */}
+          {hasAdminAccess && (
+            <>
+              <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-dark-400 uppercase tracking-wider">
+                Admin
+              </div>
+              {adminItems
+                .filter(item => hasPermission(user, item.permission))
+                .map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) => 
+                      `block px-3 py-2 rounded-md text-base font-medium flex items-center space-x-3 ${
+                        isActive
+                          ? 'bg-primary-50 dark:bg-dark-600 text-primary-700 dark:text-primary-400'
+                          : 'text-dark-600 dark:text-dark-100 hover:bg-gray-50 dark:hover:bg-dark-600'
+                      }`
+                    }
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))
+              }
+            </>
+          )}
         </div>
       </div>
     </nav>

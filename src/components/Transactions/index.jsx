@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReceiptModal from '../POS/ReceiptModal';
+import RefundModal from './RefundModal';
 import {
   IconSearch,
   IconCalendar,
@@ -7,7 +8,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconX,
-  IconFilter
+  IconFilter,
+  IconArrowBackUp
 } from '@tabler/icons-react';
 
 const Transactions = () => {
@@ -17,6 +19,7 @@ const Transactions = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [settings, setSettings] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,19 +33,30 @@ const Transactions = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [filteredTransactions, setFilteredTransactions] = useState([]);
 
+  const fetchTransactions = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch transactions
+      const data = await window.api.transactions.getTransactions();
+      // Sort by date, newest first
+      const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setTransactions(sorted);
+      setFilteredTransactions(sorted);
+      
+      // Calculate total pages
+      setTotalPages(Math.ceil(sorted.length / itemsPerPage));
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch transactions
-        const data = await window.api.transactions.getTransactions();
-        // Sort by date, newest first
-        const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-        setTransactions(sorted);
-        setFilteredTransactions(sorted);
-        
-        // Calculate total pages
-        setTotalPages(Math.ceil(sorted.length / itemsPerPage));
+        await fetchTransactions();
         
         // Fetch settings
         const settingsData = await window.api.settings.getSettings();
@@ -62,11 +76,14 @@ const Transactions = () => {
     if (transactions.length > 0) {
       let results = [...transactions];
       
+      // Filter out refund transactions (those with RF- prefix)
+      results = results.filter(tx => !(tx.receiptId && tx.receiptId.startsWith('RF-')));
+      
       // Apply search term filter
       if (searchTerm.trim() !== '') {
         const search = searchTerm.toLowerCase();
         results = results.filter(tx => 
-          tx._id.toLowerCase().includes(search) || 
+          (tx.receiptId && tx.receiptId.toLowerCase().includes(search)) || 
           tx.items.some(item => item.name.toLowerCase().includes(search))
         );
       }
@@ -211,6 +228,19 @@ const Transactions = () => {
     return pageNumbers;
   };
 
+  const handleRefund = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowRefundModal(true);
+  };
+
+  const handleRefundComplete = () => {
+    // Close the refund modal
+    setShowRefundModal(false);
+    
+    // Refresh transactions list after refund
+    fetchTransactions();
+  };
+
   // Update the loading state to match dark mode theme
   if (isLoading) {
     return (
@@ -323,37 +353,91 @@ const Transactions = () => {
         </div>
       ) : !isLoading && (
         <div className="bg-white dark:bg-dark-700 rounded-xl shadow-soft dark:shadow-none overflow-hidden transition-colors duration-200">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-            <thead className="bg-gray-50 dark:bg-dark-600">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Items</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Payment</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
-              {paginatedTransactions.map(tx => (
-                <tr key={tx._id} className="hover:bg-gray-50 dark:hover:bg-dark-600 transition-colors duration-150">
-                  <td className="px-6 py-4 text-sm text-dark-500 dark:text-dark-300 truncate max-w-[150px] font-mono">{tx._id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-500 dark:text-dark-300">{formatDate(tx.date)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-500 dark:text-dark-300">{tx.items?.length || 0} items</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">{formatCurrency(tx.total)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-500 dark:text-dark-300 capitalize">{tx.paymentMethod}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleViewDetails(tx._id)}
-                      className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-150"
-                    >
-                      Details
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-500">
+              <thead className="bg-gray-50 dark:bg-dark-600/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Receipt ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Items</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Payment</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-500">
+                {paginatedTransactions.length > 0 ? (
+                  paginatedTransactions.map((transaction) => (
+                    <tr key={transaction._id} className="hover:bg-gray-50 dark:hover:bg-dark-600/50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">
+                        {transaction.receiptId || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-dark-300">
+                        {formatDate(transaction.date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-dark-300">
+                        {transaction.items.length} {transaction.items.length === 1 ? 'item' : 'items'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-dark-300 capitalize">
+                        {transaction.paymentMethod}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-dark-300">
+                        {formatCurrency(transaction.total)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        {transaction.refunded ? (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400">
+                            Refunded
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                            Completed
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleShowReceipt(transaction)}
+                            className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300"
+                            title="View Receipt"
+                          >
+                            <IconReceipt size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleViewDetails(transaction._id)}
+                            className="text-gray-600 dark:text-dark-300 hover:text-gray-800 dark:hover:text-dark-100"
+                            title="View Details"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          {!transaction.refunded && (
+                            <button
+                              onClick={() => handleRefund(transaction)}
+                              className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+                              title="Process Refund"
+                            >
+                              <IconArrowBackUp size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500 dark:text-dark-300">
+                      No transactions found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           
           {/* Pagination */}
           <div className="bg-white dark:bg-dark-700 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-dark-600 transition-colors duration-200">
@@ -448,118 +532,146 @@ const Transactions = () => {
       
       {/* Transaction Details Modal */}
       {showDetails && selectedTransaction && (
-        <div className="fixed inset-0 bg-dark-900/75 flex items-center justify-center z-40 animate-fade-in">
-          <div className="bg-white dark:bg-dark-700 rounded-xl shadow-hard dark:shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto animate-slide-up">
-            <div className="flex justify-between items-center mb-5">
-              <h2 className="text-xl font-display font-semibold text-dark-800 dark:text-white">Transaction Details</h2>
-              <button
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col transition-colors duration-200">
+            {/* Modal header */}
+            <div className="p-4 border-b border-gray-200 dark:border-dark-600 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-dark-800 dark:text-white">Transaction Details</h3>
+              <button 
                 onClick={() => setShowDetails(false)}
-                className="text-dark-400 dark:text-dark-300 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-150"
+                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors duration-150"
               >
-                <IconX size={24} />
+                <IconX size={20} className="text-gray-500 dark:text-dark-300" />
               </button>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex justify-between border-b border-gray-200 dark:border-dark-600 pb-3">
-                <div className="text-sm text-dark-500 dark:text-dark-300">Transaction ID:</div>
-                <div className="text-sm font-medium text-dark-700 dark:text-dark-100 font-mono">{selectedTransaction._id}</div>
+            {/* Modal body */}
+            <div className="p-6 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-dark-300">Receipt ID</p>
+                  <p className="font-medium text-dark-800 dark:text-white">{selectedTransaction.receiptId || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-dark-300">Date</p>
+                  <p className="font-medium text-dark-800 dark:text-white">{formatDate(selectedTransaction.date)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-dark-300">Payment Method</p>
+                  <p className="font-medium text-dark-800 dark:text-white capitalize">{selectedTransaction.paymentMethod}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-dark-300">Status</p>
+                  <p className="font-medium">
+                    {selectedTransaction.refunded ? (
+                      <span className="text-red-500 dark:text-red-400">Refunded</span>
+                    ) : (
+                      <span className="text-green-500 dark:text-green-400">Completed</span>
+                    )}
+                  </p>
+                </div>
               </div>
               
-              <div className="flex justify-between border-b border-gray-200 dark:border-dark-600 pb-3">
-                <div className="text-sm text-dark-500 dark:text-dark-300">Date:</div>
-                <div className="text-sm font-medium text-dark-700 dark:text-dark-100">{formatDate(selectedTransaction.date)}</div>
-              </div>
-              
-              <div className="flex justify-between border-b border-gray-200 dark:border-dark-600 pb-3">
-                <div className="text-sm text-dark-500 dark:text-dark-300">Payment Method:</div>
-                <div className="text-sm font-medium text-dark-700 dark:text-dark-100 capitalize">{selectedTransaction.paymentMethod}</div>
-              </div>
-              
-              <div>
-                <div className="font-medium mb-3 text-dark-700 dark:text-dark-100">Items:</div>
+              {/* Items table */}
+              <div className="border border-gray-200 dark:border-dark-600 rounded-lg overflow-hidden mb-4">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-dark-600">
-                  <thead className="bg-gray-50 dark:bg-dark-600">
+                  <thead className="bg-gray-50 dark:bg-dark-600/50">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Item</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Qty</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Price</th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-dark-500 dark:text-dark-300 uppercase tracking-wider">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Item</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Price</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Qty</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-dark-600">
+                  <tbody className="bg-white dark:bg-dark-700 divide-y divide-gray-200 dark:divide-dark-600">
                     {selectedTransaction.items.map((item, index) => (
                       <tr key={index}>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-dark-700 dark:text-dark-100">{item.name}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-dark-500 dark:text-dark-300">{item.quantity}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-dark-500 dark:text-dark-300">{formatCurrency(item.price)}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-dark-700 dark:text-dark-100 text-right">
-                          {formatCurrency(item.price * item.quantity)}
-                        </td>
+                        <td className="px-4 py-3 text-sm text-dark-800 dark:text-white">{item.name}</td>
+                        <td className="px-4 py-3 text-sm text-dark-800 dark:text-white text-right">{formatCurrency(item.price)}</td>
+                        <td className="px-4 py-3 text-sm text-dark-800 dark:text-white text-right">{item.quantity}</td>
+                        <td className="px-4 py-3 text-sm text-dark-800 dark:text-white text-right">{formatCurrency(item.price * item.quantity)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               
-              <div className="border-t border-gray-200 dark:border-dark-600 pt-3">
-                <div className="flex justify-between py-1">
-                  <div className="text-sm text-dark-500 dark:text-dark-300">Subtotal:</div>
-                  <div className="text-sm font-medium text-dark-700 dark:text-dark-100">{formatCurrency(selectedTransaction.subtotal)}</div>
-                </div>
-                <div className="flex justify-between py-1">
-                  <div className="text-sm text-dark-500 dark:text-dark-300">Tax:</div>
-                  <div className="text-sm font-medium text-dark-700 dark:text-dark-100">{formatCurrency(selectedTransaction.tax)}</div>
-                </div>
-                <div className="flex justify-between py-1 text-lg font-bold">
-                  <div className="text-dark-800 dark:text-white">Total:</div>
-                  <div className="text-dark-800 dark:text-white">{formatCurrency(selectedTransaction.total)}</div>
+              {/* Totals */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-dark-300">Subtotal:</span>
+                  <span className="text-dark-800 dark:text-white">{formatCurrency(selectedTransaction.subtotal)}</span>
                 </div>
                 
-                {selectedTransaction.paymentMethod === 'cash' && (
-                  <>
-                    <div className="flex justify-between py-1">
-                      <div className="text-sm text-dark-500 dark:text-dark-300">Amount Received:</div>
-                      <div className="text-sm font-medium text-dark-700 dark:text-dark-100">{formatCurrency(selectedTransaction.paymentAmount)}</div>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <div className="text-sm text-dark-500 dark:text-dark-300">Change:</div>
-                      <div className="text-sm font-medium text-dark-700 dark:text-dark-100">{formatCurrency(selectedTransaction.change)}</div>
-                    </div>
-                  </>
+                {selectedTransaction.discount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-dark-300">Discount:</span>
+                    <span className="text-dark-800 dark:text-white">-{formatCurrency(selectedTransaction.discount)}</span>
+                  </div>
                 )}
+                
+                {selectedTransaction.taxType !== 'disabled' && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-dark-300">
+                      {selectedTransaction.taxName || 'Tax'} ({selectedTransaction.taxRate}%):
+                    </span>
+                    <span className="text-dark-800 dark:text-white">{formatCurrency(selectedTransaction.tax)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between font-medium pt-2 border-t border-gray-200 dark:border-dark-600">
+                  <span className="text-gray-800 dark:text-white">Total:</span>
+                  <span className="text-primary-600 dark:text-primary-400">{formatCurrency(selectedTransaction.total)}</span>
+                </div>
               </div>
             </div>
             
-            <div className="mt-6 flex justify-end">
+            {/* Modal footer */}
+            <div className="p-4 border-t border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-600/30 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDetails(false)}
+                className="px-4 py-2 border border-gray-300 dark:border-dark-500 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-dark-200 bg-white dark:bg-dark-600 hover:bg-gray-50 dark:hover:bg-dark-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+              >
+                Close
+              </button>
               <button
                 onClick={() => handleShowReceipt(selectedTransaction)}
-                className="bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-800 text-white px-4 py-2 rounded-lg shadow-sm transition-colors duration-150"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-primary-400 flex items-center"
               >
-                Show Receipt
+                <IconReceipt size={18} className="mr-1" /> View Receipt
               </button>
+              {!selectedTransaction.refunded && (
+                <button
+                  onClick={() => {
+                    setShowDetails(false);
+                    handleRefund(selectedTransaction);
+                  }}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:focus:ring-yellow-400 flex items-center"
+                >
+                  <IconArrowBackUp size={18} className="mr-1" /> Process Refund
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
       
-      {/* Receipt Modal - with higher z-index to ensure it appears on top */}
-      {showReceiptModal && selectedTransaction && (
-        <ReceiptModal
-          isOpen={showReceiptModal}
-          onClose={() => setShowReceiptModal(false)}
-          transactionData={{
-            ...selectedTransaction,
-            receiptId: selectedTransaction._id
-          }}
-          businessInfo={{
-            businessName: settings?.businessName || 'My POS Store',
-            address: settings?.address || '',
-            phone: settings?.phone || '',
-            employee: settings?.defaultEmployee || 'Cashier'
-          }}
-        />
-      )}
+      {/* Receipt Modal */}
+      <ReceiptModal
+        isOpen={showReceiptModal}
+        onClose={() => setShowReceiptModal(false)}
+        transactionData={selectedTransaction}
+        businessInfo={settings}
+      />
+      
+      {/* Refund Modal */}
+      <RefundModal
+        isOpen={showRefundModal}
+        onClose={() => setShowRefundModal(false)}
+        onRefundComplete={handleRefundComplete}
+        businessInfo={settings}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 };

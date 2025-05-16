@@ -28,11 +28,18 @@ contextBridge.exposeInMainWorld(
       initializeDefaults: () => ipcRenderer.invoke('db:initializeDefaults')
     },
     
+    // Product operations
+    products: {
+      updateStock: (stockUpdates) => ipcRenderer.invoke('db:updateProductStock', stockUpdates)
+    },
+    
     // Transaction operations
     transactions: {
       createTransaction: (transaction) => ipcRenderer.invoke('tx:create', transaction),
       getTransactions: () => ipcRenderer.invoke('tx:getAll'),
-      getTransactionById: (id) => ipcRenderer.invoke('tx:getById', id)
+      getTransactionById: (id) => ipcRenderer.invoke('tx:getById', id),
+      getTransactionByReceiptId: (receiptId) => ipcRenderer.invoke('tx:getByReceiptId', receiptId),
+      processRefund: (refundData) => ipcRenderer.invoke('tx:processRefund', refundData)
     },
     
     // Printing operations

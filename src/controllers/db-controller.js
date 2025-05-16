@@ -36,6 +36,49 @@ const setupDbHandlers = () => {
     }
   });
 
+  // Update product stock after transaction
+  ipcMain.handle('db:updateProductStock', async (event, stockUpdates) => {
+    try {
+      const results = [];
+      
+      // Process each update sequentially to avoid race conditions
+      for (const update of stockUpdates) {
+        // Get current product
+        const product = await promisify(
+          db.products.findOne.bind(db.products), 
+          { _id: update.productId }
+        );
+        
+        if (!product) {
+          throw new Error(`Product not found: ${update.productId}`);
+        }
+        
+        // Calculate new stock
+        const newStock = Math.max(0, product.stock - update.quantity);
+        
+        // Update the product
+        const result = await promisify(
+          db.products.update.bind(db.products),
+          { _id: update.productId },
+          { $set: { stock: newStock } },
+          {}
+        );
+        
+        results.push({
+          productId: update.productId,
+          oldStock: product.stock,
+          newStock: newStock,
+          result: result
+        });
+      }
+      
+      return { success: true, results };
+    } catch (error) {
+      console.error('Error updating product stock:', error);
+      throw error;
+    }
+  });
+
   ipcMain.handle('db:getProduct', async (event, id) => {
     try {
       return await promisify(db.products.findOne.bind(db.products), { _id: id });
@@ -130,6 +173,15 @@ const setupDbHandlers = () => {
   // Transaction handlers
   ipcMain.handle('tx:create', async (event, transaction) => {
     try {
+      // Generate a receipt ID if not provided
+      if (!transaction.receiptId) {
+        // Create a receipt ID in format INV + 6 digits based on current date/time
+        const now = new Date();
+        const timestamp = now.getTime() % 1000000; // Last 6 digits of timestamp
+        const paddedNumber = String(timestamp).padStart(6, '0');
+        transaction.receiptId = `INV${paddedNumber}`;
+      }
+      
       return await promisify(db.transactions.insert.bind(db.transactions), transaction);
     } catch (error) {
       console.error('Error creating transaction:', error);
@@ -152,6 +204,88 @@ const setupDbHandlers = () => {
     } catch (error) {
       console.error(`Error fetching transaction ${id}:`, error);
       throw error;
+    }
+  });
+
+  ipcMain.handle('tx:getByReceiptId', async (event, receiptId) => {
+    try {
+      return await promisify(db.transactions.findOne.bind(db.transactions), { receiptId: receiptId });
+    } catch (error) {
+      console.error(`Error fetching transaction with receipt ID ${receiptId}:`, error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('tx:processRefund', async (event, refundData) => {
+    try {
+      // Start a transaction-like operation (NeDB doesn't support true transactions)
+      // 1. Mark the original transaction as refunded
+      const originalTransaction = await promisify(
+        db.transactions.findOne.bind(db.transactions),
+        { _id: refundData.originalTransactionId }
+      );
+
+      if (!originalTransaction) {
+        throw new Error('Original transaction not found');
+      }
+
+      if (originalTransaction.refunded) {
+        throw new Error('This transaction has already been refunded');
+      }
+
+      // Update the original transaction to mark it as refunded
+      await promisify(
+        db.transactions.update.bind(db.transactions),
+        { _id: refundData.originalTransactionId },
+        { $set: { 
+          refunded: true,
+          refundReason: refundData.refundReason,
+          refundDate: refundData.refundDate
+        }},
+        {}
+      );
+
+      // 2. Create a refund transaction record
+      const refundTransaction = {
+        type: 'refund',
+        originalTransactionId: refundData.originalTransactionId,
+        receiptId: `RF-${refundData.receiptId}`,
+        date: refundData.refundDate,
+        items: refundData.items,
+        subtotal: refundData.refundAmount,
+        tax: 0, // Tax is already included in the refund amount
+        total: refundData.refundAmount,
+        paymentMethod: refundData.paymentMethod,
+        refundReason: refundData.refundReason
+      };
+
+      await promisify(db.transactions.insert.bind(db.transactions), refundTransaction);
+
+      // 3. Update inventory for returned items
+      for (const item of refundData.items) {
+        if (refundData.returnToStock[item._id]) {
+          // Find the product in the database
+          const product = await promisify(
+            db.products.findOne.bind(db.products),
+            { _id: item._id }
+          );
+
+          if (product) {
+            // Increase the stock quantity
+            await promisify(
+              db.products.update.bind(db.products),
+              { _id: item._id },
+              { $set: { stock: product.stock + item.quantity } },
+              {}
+            );
+          }
+        }
+      }
+
+      return { success: true, message: 'Refund processed successfully' };
+    } catch (error) {
+      console.error('Error processing refund:', error);
+      return { success: false, message: error.message };
     }
   });
 

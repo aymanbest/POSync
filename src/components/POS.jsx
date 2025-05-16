@@ -246,7 +246,8 @@ const POS = () => {
 
   const addToCart = (product) => {
     // Get the effective stock (current stock minus what's already in cart)
-    const effectiveStock = getEffectiveStock(product);
+    const effectiveStock = product.effectiveStock !== undefined ? 
+      product.effectiveStock : getEffectiveStock(product);
     
     // Prevent adding out of stock items
     if (effectiveStock <= 0) {
@@ -347,6 +348,14 @@ const POS = () => {
     return cartItem ? Math.max(0, product.stock - cartItem.quantity) : product.stock;
   };
 
+  // Get products with their effective stock for display
+  const getProductsWithEffectiveStock = () => {
+    return getFilteredProducts().map(product => ({
+      ...product,
+      effectiveStock: getEffectiveStock(product)
+    }));
+  };
+
   const calculateSubtotal = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
@@ -441,18 +450,70 @@ const POS = () => {
       // Save transaction
       const result = await window.api.transactions.createTransaction(transaction);
       
+      // Debug transaction result
+      console.log('Transaction saved:', result);
+      
+      // Update product stock in database
+      try {
+        // Create an array of product updates
+        const stockUpdates = cart.map(item => ({
+          productId: item._id,
+          quantity: item.quantity
+        }));
+        
+        console.log('Updating stock for products:', stockUpdates);
+        
+        // Update product stock in database
+        const stockUpdateResult = await window.api.products.updateStock(stockUpdates);
+        console.log('Stock update result:', stockUpdateResult);
+        
+        // Update local product state to reflect new stock levels
+        setProducts(prevProducts => {
+          const updatedProducts = prevProducts.map(product => {
+            const cartItem = cart.find(item => item._id === product._id);
+            if (cartItem) {
+              const newStock = Math.max(0, product.stock - cartItem.quantity);
+              console.log(`Product ${product.name}: Stock changed from ${product.stock} to ${newStock}`);
+              return {
+                ...product,
+                stock: newStock
+              };
+            }
+            return product;
+          });
+          return updatedProducts;
+        });
+        
+        // Show notification about stock update
+        showNotification('Product stock has been updated', 'success');
+      } catch (error) {
+        console.error('Error updating product stock:', error);
+        showNotification('Failed to update product stock', 'error');
+        // Continue with checkout process even if stock update fails
+      }
+      
       // Store transaction data for the receipt modal
-      setCurrentTransaction({
+      const completeTransaction = {
         ...transaction,
-        receiptId: result._id || 'INV000000',
-      });
+        _id: result._id,
+        receiptId: result.receiptId || `INV${Date.now().toString().slice(-6)}`,
+      };
+      
+      console.log('Complete transaction data:', completeTransaction);
+      setCurrentTransaction(completeTransaction);
       
       // Show receipt modal
       setShowReceiptModal(true);
       
       // Clear cart after successful transaction
       clearCart();
-      showNotification('Transaction completed successfully', 'success');
+      
+      // Show success notification with transaction details
+      const itemCount = transaction.items.reduce((sum, item) => sum + item.quantity, 0);
+      showNotification(
+        `Sale completed: ${itemCount} item${itemCount !== 1 ? 's' : ''} for ${formatCurrency(transaction.total)}`,
+        'success'
+      );
     } catch (error) {
       console.error('Checkout error:', error);
       showNotification('Error processing transaction', 'error');
@@ -574,13 +635,13 @@ const POS = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {getFilteredProducts().map(product => (
+              {getProductsWithEffectiveStock().map(product => (
                 <button
                   key={product._id}
                   onClick={() => addToCart(product)}
-                  disabled={product.stock <= 0}
+                  disabled={product.effectiveStock <= 0}
                   className={`bg-white dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-lg shadow-soft dark:shadow-none overflow-hidden transition-all duration-150 ${
-                    product.stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-300 dark:hover:border-primary-500 hover:-translate-y-1 hover:shadow-medium'
+                    product.effectiveStock <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-300 dark:hover:border-primary-500 hover:-translate-y-1 hover:shadow-medium'
                   }`}
                 >
                   <div className="text-center p-2">
@@ -598,13 +659,15 @@ const POS = () => {
                       {formatCurrency(product.price)}
                     </p>
                     <div className={`text-xs mt-1 font-medium px-2 py-0.5 rounded-full inline-block ${
-                      product.stock <= 0 
+                      product.effectiveStock <= 0 
                         ? 'bg-red-600 text-white' 
-                        : product.stock <= (settings?.lowStockThreshold || 5) 
+                        : product.effectiveStock <= (settings?.lowStockThreshold || 5) 
                           ? 'bg-amber-500 text-white' 
                           : 'bg-green-600 text-white'
                     }`}>
-                      Stock: {product.stock}
+                      {product.effectiveStock !== product.stock ? 
+                        `Available: ${product.effectiveStock}/${product.stock}` : 
+                        `Stock: ${product.stock}`}
                     </div>
                   </div>
                 </button>
@@ -1067,14 +1130,11 @@ const POS = () => {
       )}
       
       {/* Receipt Modal */}
-      {showReceiptModal && currentTransaction && (
+      {showReceiptModal && currentTransaction && Object.keys(currentTransaction).length > 0 && (
         <ReceiptModal
           isOpen={showReceiptModal}
           onClose={() => setShowReceiptModal(false)}
-          transactionData={{
-            ...currentTransaction,
-            receiptId: currentTransaction._id
-          }}
+          transactionData={currentTransaction}
           businessInfo={{
             businessName: settings?.businessName || 'Electron POS',
             address: settings?.address || '',
