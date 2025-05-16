@@ -8,203 +8,37 @@
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
-      width: 80mm; /* Standard receipt width */
       background-color: white;
       color: black;
+      display: flex;
+      justify-content: center;
     }
-    .receipt {
+    .receipt-container {
+      width: 80mm; /* Standard receipt width */
       padding: 5mm;
       background-color: white;
       color: black;
     }
-    .header {
-      text-align: center;
-      margin-bottom: 5mm;
-    }
-    .business-name {
-      font-size: 16pt;
-      font-weight: bold;
-      color: black;
-    }
-    .business-info {
-      text-align: center;
-      font-size: 9pt;
-      margin-bottom: 3mm;
-      color: black;
-    }
-    .receipt-info {
-      display: flex;
-      justify-content: space-between;
-      font-size: 9pt;
-      margin-bottom: 5mm;
-      color: black;
-    }
-    .divider {
-      border-top: 1px dashed #000;
-      margin: 3mm 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 9pt;
-      color: black;
-    }
-    th {
-      text-align: left;
-      padding: 1mm 0;
-      font-weight: bold;
-      color: black;
-    }
-    td {
-      padding: 1mm 0;
-      color: black;
-    }
-    .item-name {
-      width: 50%;
-    }
-    .item-qty {
-      width: 10%;
-      text-align: center;
-    }
-    .item-price {
-      width: 20%;
-      text-align: right;
-    }
-    .item-total {
-      width: 20%;
-      text-align: right;
-    }
-    .total-section {
-      margin-top: 3mm;
-      margin-bottom: 3mm;
-      color: black;
-    }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 9pt;
-      margin-bottom: 1mm;
-      color: black;
-    }
-    .total-label {
-      font-weight: bold;
-      color: black;
-    }
-    .grand-total {
-      font-size: 12pt;
-      font-weight: bold;
-      margin-top: 2mm;
-      margin-bottom: 2mm;
-      color: black;
-    }
-    .footer {
-      text-align: center;
-      font-size: 9pt;
-      margin-top: 5mm;
-      color: black;
-    }
-    .hidden {
-      display: none;
-    }
-    .barcode {
-      text-align: center;
-      margin-top: 5mm;
-    }
-    .receipt-id {
-      text-align: center;
-      font-size: 9pt;
-      margin-top: 2mm;
-      color: black;
-    }
-    
-    /* Force black text on white background for receipt content regardless of theme */
-    * {
-      color: black !important;
-      background-color: white !important;
+    @media print {
+      body {
+        width: 80mm;
+      }
+      .receipt-container {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="receipt">
-    <!-- Hidden data for JavaScript -->
-    <div id="receipt-data" class="hidden"></div>
-    
-    <!-- Header -->
-    <div class="header">
-      <div class="business-name" id="business-name"></div>
-    </div>
-    
-    <!-- Business Info -->
-    <div class="business-info">
-      <div id="business-address"></div>
-      <div id="business-phone"></div>
-    </div>
-    
-    <!-- Receipt Info -->
-    <div class="receipt-info">
-      <div>Date: <span id="date"></span></div>
-      <div>Receipt: <span id="receipt-id"></span></div>
-    </div>
-    
-    <div class="divider"></div>
-    
-    <!-- Items -->
-    <table>
-      <thead>
-        <tr>
-          <th class="item-name">Item</th>
-          <th class="item-qty">Qty</th>
-          <th class="item-price">Price</th>
-          <th class="item-total">Total</th>
-        </tr>
-      </thead>
-      <tbody id="items-body">
-        <!-- Items will be inserted here by JavaScript -->
-      </tbody>
-    </table>
-    
-    <div class="divider"></div>
-    
-    <!-- Totals -->
-    <div class="total-section">
-      <div class="total-row">
-        <div>Subtotal:</div>
-        <div id="subtotal"></div>
-      </div>
-      <div id="discount-row" class="total-row" style="display: none;">
-        <div>Discount:</div>
-        <div id="discount"></div>
-      </div>
-      <div class="total-row">
-        <div>Tax:</div>
-        <div id="tax"></div>
-      </div>
-      <div class="total-row grand-total">
-        <div class="total-label">TOTAL:</div>
-        <div id="total"></div>
-      </div>
-      <div class="total-row">
-        <div>Payment Method:</div>
-        <div id="payment-method"></div>
-      </div>
-      <div id="payment-amount-row" class="total-row">
-        <div>Amount Received:</div>
-        <div id="payment-amount"></div>
-      </div>
-      <div id="change-row" class="total-row" style="display: none;">
-        <div>Change:</div>
-        <div id="change"></div>
-      </div>
-    </div>
-    
-    <div class="divider"></div>
-    
-    <!-- Footer -->
-    <div class="footer" id="footer"></div>
-    
-    <!-- Barcode -->
-    <div class="barcode" id="barcode-container"></div>
-    <div class="receipt-id" id="barcode-text"></div>
+  <div class="receipt-container" id="receipt-content">
+    <!-- SVG content will be inserted here -->
   </div>
+
+  <script>
+    // This script will be used if direct SVG insertion is needed
+    window.insertReceiptSvg = function(svg) {
+      document.getElementById('receipt-content').innerHTML = svg;
+    };
+  </script>
 </body>
 </html> 

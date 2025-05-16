@@ -1,13 +1,121 @@
 const { ipcMain, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const receiptline = require('receiptline');
 
 let printWindow = null;
 
+// Build receipt document using receiptline markdown syntax
+const buildReceiptDocument = (data) => {
+  // Header section with business info
+  let doc = `
+{align:center}
+^^^${data.businessName}^^^
+
+${data.address || ''}
++${data.phone || ''}
+
+{align:left}
+Date: ${data.date}
+Receipt: ${data.receiptId}
+--------------------------
+
+{width:24,10,8}
+Item | Qty | Total
+{border:line}
+`;
+
+  // Add items
+  data.items.forEach(item => {
+    const itemTotal = (parseFloat(item.price) * parseInt(item.quantity)).toFixed(2);
+    doc += `${item.name} | ${item.quantity}x $${parseFloat(item.price).toFixed(2)} | $${itemTotal}\n`;
+  });
+
+  // Add totals section
+  doc += `
+{border:line}
+{align:right}
+Subtotal: $${parseFloat(data.subtotal).toFixed(2)}
+`;
+
+  // Add discount if present
+  if (data.discount > 0) {
+    doc += `Discount: -$${parseFloat(data.discount).toFixed(2)}\n`;
+  }
+
+  // Add tax
+  doc += `Tax: $${parseFloat(data.tax).toFixed(2)}\n`;
+  
+  // Add total
+  doc += `^^TOTAL: $${parseFloat(data.total).toFixed(2)}^^\n`;
+  
+  // Add payment info
+  doc += `
+{align:left}
+Payment Method: ${data.paymentMethod}
+Amount Received: $${parseFloat(data.paymentAmount).toFixed(2)}
+`;
+
+  // Add change if present
+  if (data.change > 0) {
+    doc += `Change: $${parseFloat(data.change).toFixed(2)}\n`;
+  }
+
+  // Add footer
+  doc += `
+--------------------------
+{align:center}
+${data.footer || "Thanks for coming!"}
+
+{code:${data.receiptId};option:code128,3,40,hri}
+`;
+
+  return doc;
+};
+
 const setupPrintHandlers = () => {
+  // Handler for generating receipt SVG
+  ipcMain.handle('print:generateReceiptSvg', async (event, data) => {
+    try {
+      // Generate receipt using receiptline
+      const doc = buildReceiptDocument(data);
+      
+      // Transform to SVG
+      const svg = receiptline.transform(doc, {
+        cpl: 40, // Characters per line - slightly narrower for better display
+        encoding: 'multilingual',
+        command: 'svg'
+      });
+      
+      return { success: true, svg };
+    } catch (error) {
+      console.error('Error generating receipt SVG:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // Handle receipt printing
   ipcMain.handle('print:receipt', async (event, data) => {
     try {
+      // Generate receipt using receiptline
+      const doc = buildReceiptDocument(data);
+      
+      // Transform to SVG for display
+      const svg = receiptline.transform(doc, {
+        cpl: 40,
+        encoding: 'multilingual',
+        command: 'svg'
+      });
+      
+      // Generate printer commands for printing (optional for future direct printing)
+      const command = receiptline.transform(doc, {
+        cpl: 42,
+        encoding: 'multilingual',
+        upsideDown: false,
+        gamma: 1.8,
+        command: 'escpos'
+      });
+      
       // Create a hidden window for printing
       if (!printWindow) {
         printWindow = new BrowserWindow({
@@ -21,103 +129,41 @@ const setupPrintHandlers = () => {
         });
       }
 
-      // Load receipt template
-      await printWindow.loadFile(path.join(__dirname, '../templates/receipt.html'));
+      // Create a simple HTML page with the SVG content
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Receipt</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              background-color: white;
+            }
+            .receipt-container {
+              width: 80mm;
+              background-color: white;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            ${svg}
+          </div>
+        </body>
+        </html>
+      `;
       
-      // Load JsBarcode library
-      await printWindow.webContents.executeJavaScript(`
-        return new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      `);
+      // Create a temporary HTML file
+      const tempHtmlPath = path.join(process.env.TEMP || process.env.TMP || '', 'receipt.html');
+      fs.writeFileSync(tempHtmlPath, htmlContent);
       
-      // Escape special characters to prevent JS errors
-      const escapeStr = (str) => {
-        if (typeof str !== 'string') return '';
-        return str
-          .replace(/\\/g, '\\\\')
-          .replace(/'/g, "\\'")
-          .replace(/"/g, '\\"')
-          .replace(/\n/g, '\\n')
-          .replace(/\r/g, '\\r')
-          .replace(/\t/g, '\\t');
-      };
-      
-      // Generate items HTML
-      const itemsHtml = data.items.map(item => `
-        const row = document.createElement('tr');
-        row.innerHTML = \`
-          <td class="item-name">${escapeStr(item.name)}</td>
-          <td class="item-qty">${item.quantity}</td>
-          <td class="item-price">$${parseFloat(item.price).toFixed(2)}</td>
-          <td class="item-total">$${(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</td>
-        \`;
-        itemsBody.appendChild(row);
-      `).join('\n');
-
-      // Insert receipt data
-      await printWindow.webContents.executeJavaScript(`
-        try {
-          document.getElementById('business-name').textContent = '${escapeStr(data.businessName)}';
-          document.getElementById('business-address').textContent = '${escapeStr(data.address)}';
-          document.getElementById('business-phone').textContent = '${escapeStr(data.phone)}';
-          document.getElementById('date').textContent = '${escapeStr(data.date)}';
-          document.getElementById('receipt-id').textContent = '${escapeStr(data.receiptId)}';
-          document.getElementById('barcode-text').textContent = '${escapeStr(data.receiptId)}';
-          
-          const itemsBody = document.getElementById('items-body');
-          itemsBody.innerHTML = ''; // Clear any existing content
-          
-          ${itemsHtml}
-          
-          document.getElementById('subtotal').textContent = '$${parseFloat(data.subtotal).toFixed(2)}';
-          document.getElementById('tax').textContent = '$${parseFloat(data.tax).toFixed(2)}';
-          document.getElementById('total').textContent = '$${parseFloat(data.total).toFixed(2)}';
-          document.getElementById('payment-method').textContent = '${escapeStr(data.paymentMethod)}';
-          document.getElementById('payment-amount').textContent = '$${parseFloat(data.paymentAmount).toFixed(2)}';
-          
-          // Handle discount if present
-          if (${data.discount > 0}) {
-            const discountRow = document.getElementById('discount-row');
-            discountRow.style.display = 'flex';
-            document.getElementById('discount').textContent = '-$${parseFloat(data.discount).toFixed(2)}';
-          }
-          
-          // Handle change if present
-          if (${data.change > 0}) {
-            const changeRow = document.getElementById('change-row');
-            changeRow.style.display = 'flex';
-            document.getElementById('change').textContent = '$${parseFloat(data.change).toFixed(2)}';
-          }
-          
-          document.getElementById('footer').textContent = '${escapeStr(data.footer)}';
-          
-          // Generate barcode
-          const barcodeContainer = document.getElementById('barcode-container');
-          const barcodeCanvas = document.createElement('svg');
-          barcodeContainer.appendChild(barcodeCanvas);
-          
-          if (window.JsBarcode) {
-            JsBarcode(barcodeCanvas, '${escapeStr(data.receiptId)}', {
-              format: 'CODE128',
-              width: 1.5,
-              height: 40,
-              displayValue: false,
-              margin: 0
-            });
-          }
-          
-          console.log('Receipt data loaded successfully');
-          true;
-        } catch (error) {
-          console.error('Error loading receipt data:', error);
-          throw error;
-        }
-      `);
+      // Load the HTML file
+      await printWindow.loadFile(tempHtmlPath);
 
       // Print the window
       const pdfPath = path.join(process.env.TEMP || process.env.TMP || '', 'receipt.pdf');
@@ -145,6 +191,14 @@ const setupPrintHandlers = () => {
         printBackground: true, 
         deviceName: '' 
       });
+
+      // For direct printing to thermal printer (optional enhancement)
+      // This would require additional setup with a printer driver
+      // const printerName = data.printerName || '';
+      // if (printerName) {
+      //   // Use command for direct printing to thermal printer
+      //   // This would require additional implementation
+      // }
 
       return { success: true, path: pdfPath };
     } catch (error) {

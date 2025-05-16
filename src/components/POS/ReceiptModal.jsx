@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import JsBarcode from 'jsbarcode';
+// Import receiptline only in the main process, not in the renderer
+// We'll use IPC to communicate with the main process for receipt generation
 
 const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
   const receiptRef = useRef(null);
-  const barcodeRef = useRef(null);
+  const [receiptSvg, setReceiptSvg] = useState('');
   const [isRendered, setIsRendered] = useState(false);
+  const [error, setError] = useState(null);
+  const [receiptHeight, setReceiptHeight] = useState(0);
 
   useEffect(() => {
     // Debug logging
@@ -12,36 +15,35 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     console.log('Business Info:', businessInfo);
     
     if (isOpen && transactionData) {
-      // Mark as rendered to trigger re-render
-      setIsRendered(true);
+      try {
+        // Generate receipt using the main process via IPC
+        generateReceiptSvg(transactionData, businessInfo)
+          .then(svg => {
+            setReceiptSvg(svg);
+            setIsRendered(true);
+            setError(null);
+            
+            // After SVG is rendered, get its height to adjust container
+            setTimeout(() => {
+              if (receiptRef.current) {
+                const svgElement = receiptRef.current.querySelector('svg');
+                if (svgElement) {
+                  setReceiptHeight(svgElement.getBoundingClientRect().height);
+                }
+              }
+            }, 100);
+          })
+          .catch(err => {
+            console.error('Error generating receipt:', err);
+            setError(err.message || 'Failed to generate receipt');
+          });
+      } catch (err) {
+        console.error('Error setting up receipt generation:', err);
+        setError(err.message || 'Failed to generate receipt');
+      }
       
       // Prevent background scrolling when modal is open
       document.body.style.overflow = 'hidden';
-      
-      // Small delay to ensure DOM is ready for barcode generation
-      const timer = setTimeout(() => {
-        if (barcodeRef.current) {
-          try {
-            JsBarcode(barcodeRef.current, transactionData.receiptId || 'INV000000', {
-              format: 'CODE128',
-              width: 1.5,
-              height: 40,
-              displayValue: true,
-              fontSize: 10,
-              margin: 0
-            });
-            console.log('Barcode generated successfully');
-          } catch (error) {
-            console.error('Error generating barcode:', error);
-          }
-        } else {
-          console.error('Barcode ref is not available');
-        }
-      }, 100);
-      
-      return () => {
-        clearTimeout(timer);
-      };
     } else {
       document.body.style.overflow = 'auto';
     }
@@ -50,7 +52,38 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [isOpen, transactionData, isRendered]);
+  }, [isOpen, transactionData, businessInfo]);
+
+  // Function to generate receipt SVG via IPC
+  const generateReceiptSvg = async (data, business) => {
+    // Format the receipt data
+    const receiptData = {
+      businessName: business?.businessName || 'POS System',
+      address: business?.address || '',
+      phone: business?.phone || '',
+      employee: business?.employee || 'Cashier',
+      date: formatDate(data.date),
+      receiptId: data.receiptId || 'INV000000',
+      items: data.items,
+      subtotal: data.subtotal,
+      discount: data.discount,
+      tax: data.tax,
+      total: data.total,
+      paymentMethod: data.paymentMethod,
+      paymentAmount: data.paymentAmount,
+      change: data.change,
+      footer: "Thanks for coming!"
+    };
+    
+    // Call the main process to generate the receipt
+    const result = await window.api.print.generateReceiptSvg(receiptData);
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to generate receipt');
+    }
+    
+    return result.svg;
+  };
 
   if (!isOpen) return null;
   
@@ -62,8 +95,8 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     typeof transactionData.total === 'number';
   
   // If transaction data is invalid, show debug info
-  if (!isValidTransaction) {
-    console.error('Invalid transaction data:', transactionData);
+  if (!isValidTransaction || error) {
+    console.error('Invalid transaction data or error:', transactionData, error);
     return (
       <>
         <div 
@@ -82,7 +115,7 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
             <p className="mb-4">The receipt cannot be displayed because the transaction data is invalid or incomplete.</p>
             
             <div className="bg-gray-100 p-4 rounded-lg mb-4 overflow-auto max-h-60">
-              <pre className="text-xs">{JSON.stringify(transactionData, null, 2)}</pre>
+              <pre className="text-xs">{JSON.stringify(error || transactionData, null, 2)}</pre>
             </div>
             
             <div className="flex justify-end">
@@ -99,205 +132,42 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     );
   }
 
-  const handleShare = () => {
+  const handleShare = async () => {
     try {
+      // Generate receipt SVG through main process
+      const svg = await generateReceiptSvg(transactionData, businessInfo);
+      
       // Create a canvas element
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Set dimensions
-      const width = 380;
-      const height = 600; // Estimated height
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      // Fill white background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, width, height);
-      
-      // Set font styles
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#000000';
-      
-      // Business name
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText(businessInfo?.businessName || 'My POS Store', width/2, 30);
-      
-      // Contact info
-      ctx.font = '12px Arial';
-      ctx.fillText(`+${businessInfo?.phone || '555-123-4567'}`, width/2, 50);
-      ctx.fillText(businessInfo?.address || '123 Main St', width/2, 70);
-      
-      // Set left align for the next sections
-      ctx.textAlign = 'left';
-      
-      // Customer & Employee
-      ctx.font = '12px Arial';
-      ctx.fillText('Customer', 40, 100);
-      ctx.fillText('Employee', 40, 120);
-      
-      // Right aligned info
-      ctx.textAlign = 'right';
-      ctx.fillText('WALK-IN', width - 40, 100);
-      ctx.fillText(businessInfo?.employee || 'Cashier', width - 40, 120);
-      
-      // Headers
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 12px Arial';
-      ctx.fillText('Description', 40, 150);
-      
-      ctx.textAlign = 'center';
-      ctx.fillText('Qty', width - 120, 150);
-      
-      ctx.textAlign = 'right';
-      ctx.fillText('Total', width - 40, 150);
-      
-      // Line
-      ctx.beginPath();
-      ctx.moveTo(40, 160);
-      ctx.lineTo(width - 40, 160);
-      ctx.strokeStyle = '#cccccc';
-      ctx.stroke();
-      
-      // Items
-      let y = 180;
-      ctx.font = '12px Arial';
-      
-      transactionData.items.forEach(item => {
-        ctx.textAlign = 'left';
-        ctx.fillText(item.name, 40, y);
+      // Create an image from the SVG
+      const img = new Image();
+      img.onload = () => {
+        // Set canvas dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
         
-        ctx.textAlign = 'center';
-        ctx.fillText(`${item.quantity}x $${item.price.toFixed(2)}`, width - 120, y);
+        // Draw white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        ctx.textAlign = 'right';
-        ctx.fillText(`$${(item.quantity * item.price).toFixed(2)}`, width - 40, y);
+        // Draw the image
+        ctx.drawImage(img, 0, 0);
         
-        y += 20;
-      });
+        // Convert to PNG and download
+        const pngUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `receipt-${transactionData.receiptId || 'INV000000'}.png`;
+        link.href = pngUrl;
+        link.click();
+      };
       
-      // Line before totals
-      y += 10;
-      ctx.beginPath();
-      ctx.moveTo(40, y);
-      ctx.lineTo(width - 40, y);
-      ctx.stroke();
-      
-      y += 20;
-      
-      // Totals
-      ctx.textAlign = 'left';
-      ctx.font = '12px Arial';
-      
-      // Subtotal
-      ctx.fillText('Subtotal', 40, y);
-      ctx.textAlign = 'right';
-      ctx.fillText(`$${transactionData.subtotal.toFixed(2)}`, width - 40, y);
-      y += 20;
-      
-      // Discount if applicable
-      if (transactionData.discount > 0) {
-        ctx.textAlign = 'left';
-        ctx.fillText(`Discount ${transactionData.discountType === 'percentage' ? `(${transactionData.discountValue}%)` : ''}`, 40, y);
-        ctx.textAlign = 'right';
-        ctx.fillText(`-$${transactionData.discount.toFixed(2)}`, width - 40, y);
-        y += 20;
-      }
-      
-      // Tax if applicable
-      if (transactionData.taxType !== 'disabled') {
-        ctx.textAlign = 'left';
-        const taxText = `${transactionData.taxName || 'Tax'} (${transactionData.taxRate}%)${transactionData.taxType === 'included' ? ' (Included)' : ''}`;
-        ctx.fillText(taxText, 40, y);
-        ctx.textAlign = 'right';
-        ctx.fillText(`$${transactionData.tax.toFixed(2)}`, width - 40, y);
-        y += 20;
-      }
-      
-      // Total
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 14px Arial';
-      ctx.fillText('Total', 40, y);
-      ctx.textAlign = 'right';
-      ctx.fillText(`$${transactionData.total.toFixed(2)}`, width - 40, y);
-      y += 20;
-      
-      // Payment info
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'left';
-      ctx.fillText(`Received (${transactionData.paymentMethod})`, 40, y);
-      ctx.textAlign = 'right';
-      ctx.fillText(`$${transactionData.paymentAmount.toFixed(2)}`, width - 40, y);
-      y += 20;
-      
-      // Change if applicable
-      if (transactionData.change > 0) {
-        ctx.textAlign = 'left';
-        ctx.fillText('Change', 40, y);
-        ctx.textAlign = 'right';
-        ctx.fillText(`$${transactionData.change.toFixed(2)}`, width - 40, y);
-        y += 20;
-      }
-      
-      // Line after totals
-      ctx.beginPath();
-      ctx.moveTo(40, y);
-      ctx.lineTo(width - 40, y);
-      ctx.stroke();
-      
-      // Footer text
-      y += 20;
-      ctx.textAlign = 'center';
-      ctx.fillText("Thanks for coming!", width/2, y);
-      
-      // Format date
-      const d = new Date(transactionData.date);
-      const formattedDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
-      
-      y += 20;
-      ctx.fillText(formattedDate, width/2, y);
-      
-      // Add real barcode using JsBarcode directly on canvas
-      y += 30;
-      
-      // Create a temporary canvas for the barcode
-      const barcodeCanvas = document.createElement('canvas');
-      
-      // Generate barcode on the temporary canvas
-      JsBarcode(barcodeCanvas, transactionData.receiptId || 'INV000000', {
-        format: 'CODE128',
-        width: 1.5,
-        height: 40,
-        displayValue: false, // We'll add the text manually
-        margin: 0,
-        background: '#FFFFFF'
-      });
-      
-      // Calculate position to center the barcode
-      const barcodeWidth = Math.min(300, barcodeCanvas.width);
-      const barcodeX = (width - barcodeWidth) / 2;
-      
-      // Draw the barcode on the main canvas
-      ctx.drawImage(
-        barcodeCanvas, 
-        0, 0, barcodeCanvas.width, barcodeCanvas.height, // Source rectangle
-        barcodeX, y, barcodeWidth, 50 // Destination rectangle
-      );
-      
-      // Add receipt ID under barcode
-      y += 65;
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(transactionData.receiptId || 'INV000000', width/2, y);
-      
-      // Convert to PNG and download
-      const pngUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `receipt-${transactionData.receiptId || 'INV000000'}.png`;
-      link.href = pngUrl;
-      link.click();
-      
+      // Set the SVG as the image source
+      // Need to convert the SVG to a data URL
+      const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      img.src = url;
     } catch (error) {
       console.error('Error generating receipt image:', error);
       alert('Failed to save the receipt image. Please try again.');
@@ -307,7 +177,6 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
   const handlePrint = async () => {
     try {
       // Format the date for printing
-      const d = new Date(transactionData.date);
       const formattedDate = formatDate(transactionData.date);
       
       // Prepare data for the receipt printer
@@ -357,10 +226,10 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
   };
 
-  // Format currency based on settings
-  const formatCurrency = (amount) => {
-    return `${amount.toFixed(2)}`;
-  };
+  // Calculate modal height based on viewport
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+  const modalMaxHeight = viewportHeight * 0.85; // 85% of viewport height
+  const contentMaxHeight = modalMaxHeight - 120; // Subtract header and footer height
 
   return (
     <>
@@ -421,27 +290,33 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
               color: black !important;
             }
             
-            .receipt-paper h1,
-            .receipt-paper p,
-            .receipt-paper div {
-              color: black !important;
+            /* Adjust SVG to fit container */
+            .receipt-content svg {
+              display: block;
+              width: 100%;
+              max-width: 300px;
+              margin: 0 auto;
+              height: auto !important;
             }
             
-            .receipt-paper .text-right {
-              text-align: right !important;
+            /* Hide scrollbar but allow scrolling if needed */
+            .receipt-content {
+              scrollbar-width: none; /* Firefox */
+              -ms-overflow-style: none; /* IE and Edge */
             }
             
-            .receipt-paper .text-center {
-              text-align: center !important;
+            .receipt-content::-webkit-scrollbar {
+              display: none; /* Chrome, Safari, Opera */
             }
           `}
         </style>
         
         <div 
-          className="bg-white dark:bg-dark-800 rounded-lg max-w-md w-full mx-4 overflow-hidden shadow-2xl"
+          className="bg-white dark:bg-dark-800 rounded-lg max-w-md w-full mx-4 overflow-hidden shadow-2xl flex flex-col"
           style={{
             animation: 'scaleIn 0.3s ease-out',
-            transformOrigin: 'center'
+            transformOrigin: 'center',
+            maxHeight: `${modalMaxHeight}px`
           }}
         >
           {/* Header with close button */}
@@ -460,128 +335,16 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
           {/* Receipt content */}
           <div 
             ref={receiptRef} 
-            className="receipt-paper p-6 receipt-content"
-            style={{ width: '300px', margin: '0 auto' }}
+            className="receipt-paper p-4 receipt-content overflow-auto flex-grow flex items-center justify-center"
+            style={{ 
+              maxHeight: `${contentMaxHeight}px`,
+              overflowY: receiptHeight > contentMaxHeight ? 'auto' : 'hidden'
+            }}
           >
-            {(() => {
-              try {
-                return (
-                  <>
-                    {/* Business Name */}
-                    <h1 className="text-xl font-bold text-center">{businessInfo?.businessName || 'POS System'}</h1>
-                    <p className="text-center text-sm">+{businessInfo?.phone || '212123'}</p>
-                    <p className="text-center text-sm mb-4">{businessInfo?.address || 'adrešes'}</p>
-                    
-                    {/* Customer/Employee Info */}
-                    <div className="flex justify-between mb-4 text-sm">
-                      <div className="w-1/2">
-                        <p>Customer</p>
-                        <p>Employee</p>
-                      </div>
-                      <div className="w-1/2 text-right">
-                        <p>WALK-IN</p>
-                        <p>{businessInfo?.employee || 'islam'}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Items */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm font-medium">
-                        <div className="w-1/2">Description</div>
-                        <div className="w-1/4 text-center">Qty</div>
-                        <div className="w-1/4 text-right">Total</div>
-                      </div>
-                      
-                      {transactionData.items.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm py-1">
-                          <div className="w-1/2 truncate pr-2">{item.name}</div>
-                          <div className="w-1/4 text-center">{item.quantity}x ${formatCurrency(item.price)}</div>
-                          <div className="w-1/4 text-right">${formatCurrency(item.price * item.quantity)}</div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Totals */}
-                    <div className="border-t border-b py-2 mb-2">
-                      {/* Subtotal */}
-                      <div className="flex justify-between text-sm">
-                        <div className="w-1/2">Subtotal</div>
-                        <div className="w-1/2 text-right">${formatCurrency(transactionData.subtotal)}</div>
-                      </div>
-                      
-                      {/* Discount if applicable */}
-                      {transactionData.discount > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <div className="w-1/2">
-                            Discount {transactionData.discountType === 'percentage' ? `(${transactionData.discountValue}%)` : ''}
-                          </div>
-                          <div className="w-1/2 text-right text-red-500">-${formatCurrency(transactionData.discount)}</div>
-                        </div>
-                      )}
-                      
-                      {/* Tax if applicable */}
-                      {transactionData.taxType !== 'disabled' && (
-                        <div className="flex justify-between text-sm">
-                          <div className="w-1/2">
-                            {transactionData.taxName || 'Tax'} ({transactionData.taxRate}%)
-                            {transactionData.taxType === 'included' ? ' (Included)' : ''}
-                          </div>
-                          <div className="w-1/2 text-right">${formatCurrency(transactionData.tax)}</div>
-                        </div>
-                      )}
-                      
-                      {/* Total */}
-                      <div className="flex justify-between font-bold mt-1">
-                        <div className="w-1/2">Total</div>
-                        <div className="w-1/2 text-right">${formatCurrency(transactionData.total)}</div>
-                      </div>
-                      
-                      {/* Payment */}
-                      <div className="flex justify-between text-sm mt-1">
-                        <div className="w-3/5">Received Amount / {transactionData.paymentMethod}</div>
-                        <div className="w-2/5 text-right">${formatCurrency(transactionData.paymentAmount)}</div>
-                      </div>
-                      
-                      {/* Change if applicable */}
-                      {transactionData.change > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <div className="w-1/2">Change</div>
-                          <div className="w-1/2 text-right">${formatCurrency(transactionData.change)}</div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Footer */}
-                    <div className="text-center text-sm">
-                      <p>Thanks for coming!</p>
-                      <p>{formatDate(transactionData.date)}</p>
-                    </div>
-                    
-                    {/* Barcode - using a container to ensure proper centering */}
-                    <div className="mt-4 flex justify-center items-center flex-col">
-                      <svg ref={barcodeRef} className="w-full max-w-xs mx-auto"></svg>
-                      <div className="text-xs mt-1 text-center w-full">{transactionData.receiptId || 'INV000000'}</div>
-                    </div>
-                  </>
-                );
-              } catch (error) {
-                console.error('Error rendering receipt content:', error);
-                return (
-                  <div className="text-center py-8">
-                    <div className="text-red-500 mb-4">
-                      <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">Error Displaying Receipt</h3>
-                    <p className="text-gray-600 mb-4">There was an error displaying the receipt content.</p>
-                    <pre className="bg-gray-100 p-2 rounded text-xs text-left overflow-auto max-h-40">
-                      {error.toString()}
-                    </pre>
-                  </div>
-                );
-              }
-            })()}
+            <div 
+              className="receipt-svg-container"
+              dangerouslySetInnerHTML={{ __html: receiptSvg }}
+            />
           </div>
           
           {/* Action buttons */}

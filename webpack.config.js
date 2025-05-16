@@ -26,7 +26,14 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx'],
+    fallback: {
+      // Add polyfills for Node.js core modules used by receiptline
+      "zlib": require.resolve("browserify-zlib"),
+      "stream": require.resolve("stream-browserify"),
+      "util": require.resolve("util/"),
+      "assert": require.resolve("assert/")
+    }
   },
   watch: process.env.NODE_ENV === 'development',
   watchOptions: {

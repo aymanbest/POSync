@@ -44,7 +44,8 @@ contextBridge.exposeInMainWorld(
     
     // Printing operations
     print: {
-      printReceipt: (data) => ipcRenderer.invoke('print:receipt', data)
+      printReceipt: (data) => ipcRenderer.invoke('print:receipt', data),
+      generateReceiptSvg: (data) => ipcRenderer.invoke('print:generateReceiptSvg', data)
     },
     
     // Settings operations
