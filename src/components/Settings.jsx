@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { IconLoader2, IconBuilding, IconCash, IconReceipt, IconDatabase, IconCode, IconSettings } from '@tabler/icons-react';
 
 const Settings = () => {
   const [settings, setSettings] = useState(null);
@@ -6,6 +7,7 @@ const Settings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState(null);
   const [isDevelopmentMode, setIsDevelopmentMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('business');
   const [seederState, setSeederState] = useState({
     enabled: false,
     numCategories: 10,
@@ -244,7 +246,7 @@ const Settings = () => {
       <div className="flex items-center justify-center h-full py-8">
         <div className="animate-pulse-slow text-center">
           <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mx-auto">
-            <div className="w-10 h-10 border-4 border-primary-500 dark:border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+            <IconLoader2 className="w-10 h-10 text-primary-500 dark:text-primary-400 animate-spin" />
           </div>
           <p className="mt-4 text-gray-500 dark:text-dark-300">Loading settings...</p>
         </div>
@@ -266,90 +268,137 @@ const Settings = () => {
         </div>
       )}
       
-      <h1 className="text-2xl font-bold mb-6 text-dark-800 dark:text-white">Settings</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Business Settings */}
-        <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
-          <h2 className="text-lg font-medium mb-4 text-dark-800 dark:text-white">Business Information</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200 dark:border-dark-600">
+        <div className="flex overflow-x-auto hide-scrollbar">
+          <button
+            onClick={() => setActiveTab('business')}
+            className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+              ${activeTab === 'business' 
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+              }`}
+          >
+            <IconBuilding size={20} className="mr-2" />
+            Business
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('financial')}
+            className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+              ${activeTab === 'financial' 
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+              }`}
+          >
+            <IconCash size={20} className="mr-2" />
+            Financial
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('receipt')}
+            className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+              ${activeTab === 'receipt' 
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+              }`}
+          >
+            <IconReceipt size={20} className="mr-2" />
+            Receipt
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('database')}
+            className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+              ${activeTab === 'database' 
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+              }`}
+          >
+            <IconDatabase size={20} className="mr-2" />
+            Database
+          </button>
+          
+          {isDevelopmentMode && (
+            <button
+              onClick={() => setActiveTab('developer')}
+              className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+                ${activeTab === 'developer' 
+                  ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                  : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+                }`}
+            >
+              <IconCode size={20} className="mr-2" />
+              Developer
+            </button>
+          )}
+        </div>
+      </div>
+      
+      <div className="pb-10">
+        {/* Business Tab */}
+        {activeTab === 'business' && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Business Name
-                </label>
-                <input
-                  type="text"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Address
-                </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="2"
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                ></textarea>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-              </div>
-            </div>
-            
-            <h2 className="text-lg font-medium mt-6 mb-4 text-dark-800 dark:text-white">Financial Settings</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Currency
-                </label>
-                <select
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                >
-                  <option value="MAD">MAD (DH)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="CAD">CAD (C$)</option>
-                  <option value="AUD">AUD (A$)</option>
-                  <option value="JPY">JPY (¥)</option>
-                  <option value="CNY">CNY (¥)</option>
-                  <option value="INR">INR (₹)</option>
-                </select>
+                <h2 className="text-lg font-semibold mb-4 text-dark-800 dark:text-white flex items-center">
+                  <IconBuilding size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
+                  Business Information
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                      Business Name
+                    </label>
+                    <input
+                      type="text"
+                      name="businessName"
+                      value={formData.businessName}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                      Address
+                    </label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      rows="2"
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                    />
+                  </div>
+                </div>
               </div>
               
-              {/* Inventory Settings */}
-              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-6">
                 <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">Inventory Settings</h3>
                 
                 <div className="mb-3">
@@ -372,76 +421,66 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-
-              {/* POS Settings */}
-              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
-                <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">POS Settings</h3>
-                
-                <div className="mb-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="useNumPad"
-                      name="useNumPad"
-                      checked={formData.useNumPad}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="useNumPad" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
-                      Use Number Pad for Cash Payments
+              
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className={`w-full bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 ${
+                    isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSaving ? 'Saving...' : 'Save Business Settings'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+        
+        {/* Financial Tab */}
+        {activeTab === 'financial' && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold mb-4 text-dark-800 dark:text-white flex items-center">
+                  <IconCash size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
+                  Currency Settings
+                </h2>
+                <div className="space-y-4">
+                  <div className="bg-gray-50 dark:bg-dark-600/50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                      Currency
                     </label>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-1 ml-6">
-                    Enable calculator-style number pad for entering cash payment amounts
-                  </p>
-                </div>
-                
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
-                    Payment Methods
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-dark-300 mb-2">
-                    Select which payment methods to enable in the POS
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="paymentMethod.cash"
-                        name="paymentMethod.cash"
-                        checked={formData.paymentMethods.cash}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="paymentMethod.cash" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
-                        Cash
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="paymentMethod.card"
-                        name="paymentMethod.card"
-                        checked={formData.paymentMethods.card}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="paymentMethod.card" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
-                        Card/Credit Card
-                      </label>
-                    </div>
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                    >
+                      <option value="MAD">MAD (DH)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                      <option value="CAD">CAD (C$)</option>
+                      <option value="AUD">AUD (A$)</option>
+                      <option value="JPY">JPY (¥)</option>
+                      <option value="CNY">CNY (¥)</option>
+                      <option value="INR">INR (₹)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 dark:text-dark-300 mt-2">
+                      This currency will be used throughout the application for all transactions and reports.
+                    </p>
                   </div>
                 </div>
               </div>
               
-              {/* Tax Settings */}
-              <div className="border-t border-gray-200 dark:border-dark-500 pt-4">
-                <h3 className="text-md font-medium mb-3 text-dark-800 dark:text-white">Tax Configuration</h3>
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-6">
+                <h3 className="text-md font-medium mb-4 text-dark-800 dark:text-white flex items-center">
+                  Tax Configuration
+                </h3>
                 
-                <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                <div className="bg-gray-50 dark:bg-dark-600/50 p-4 rounded-lg mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
                     Tax Type
                   </label>
                   <select
@@ -454,7 +493,7 @@ const Settings = () => {
                     <option value="included">Included in Price</option>
                     <option value="disabled">Disabled</option>
                   </select>
-                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-2">
                     {formData.taxType === 'added' 
                       ? 'Tax is calculated on top of product prices'
                       : formData.taxType === 'included'
@@ -464,8 +503,8 @@ const Settings = () => {
                 </div>
                 
                 {formData.taxType !== 'disabled' && (
-                  <>
-                    <div className="mb-3">
+                  <div className="space-y-4">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                         Tax Name
                       </label>
@@ -479,7 +518,7 @@ const Settings = () => {
                       />
                     </div>
                     
-                    <div className="mb-3">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
                         Tax Rate (%)
                       </label>
@@ -508,177 +547,289 @@ const Settings = () => {
                         className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
                       ></textarea>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
-            </div>
-            
-            <h2 className="text-lg font-medium mt-6 mb-4 text-dark-800 dark:text-white">Receipt Settings</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Receipt Footer
-                </label>
-                <textarea
-                  name="receiptFooter"
-                  value={formData.receiptFooter}
-                  onChange={handleInputChange}
-                  rows="2"
-                  placeholder="Thank you for your business!"
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                ></textarea>
+              
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className={`w-full bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 ${
+                    isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSaving ? 'Saving...' : 'Save Financial Settings'}
+                </button>
               </div>
-            </div>
-            
-            <div className="mt-6">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className={`w-full bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 ${
-                  isSaving ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isSaving ? 'Saving...' : 'Save Settings'}
-              </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        )}
         
-        {/* Database Management */}
-        <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
-          <h2 className="text-lg font-medium mb-4 text-dark-800 dark:text-white">Database Management</h2>
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Backup Database</h3>
-              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
-                Export your database to a file that can be used to restore your data.
-              </p>
-              <button
-                onClick={handleExportDatabase}
-                className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
-              >
-                Export Database
-              </button>
+        {/* Receipt Tab */}
+        {activeTab === 'receipt' && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold mb-4 text-dark-800 dark:text-white flex items-center">
+                  <IconReceipt size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
+                  Receipt Settings
+                </h2>
+                
+                <div className="bg-gray-50 dark:bg-dark-600/50 p-4 rounded-lg mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                    Receipt Footer
+                  </label>
+                  <textarea
+                    name="receiptFooter"
+                    value={formData.receiptFooter}
+                    onChange={handleInputChange}
+                    rows="3"
+                    placeholder="Thank you for your business!"
+                    className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                  ></textarea>
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-2">
+                    This text will appear at the bottom of all receipts
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-t border-gray-200 dark:border-dark-500 pt-6">
+                <h3 className="text-md font-medium mb-4 text-dark-800 dark:text-white">POS Settings</h3>
+                
+                <div className="bg-gray-50 dark:bg-dark-600/50 p-4 rounded-lg mb-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="useNumPad"
+                      name="useNumPad"
+                      checked={formData.useNumPad}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="useNumPad" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                      Use Number Pad for Cash Payments
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mt-2 ml-6">
+                    Enable calculator-style number pad for entering cash payment amounts
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-dark-600/50 p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-2">
+                    Payment Methods
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-dark-300 mb-3">
+                    Select which payment methods to enable in the POS
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center p-2 border border-gray-200 dark:border-dark-500 rounded-md">
+                      <input
+                        type="checkbox"
+                        id="paymentMethod.cash"
+                        name="paymentMethod.cash"
+                        checked={formData.paymentMethods.cash}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="paymentMethod.cash" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                        Cash
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center p-2 border border-gray-200 dark:border-dark-500 rounded-md">
+                      <input
+                        type="checkbox"
+                        id="paymentMethod.card"
+                        name="paymentMethod.card"
+                        checked={formData.paymentMethods.card}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="paymentMethod.card" className="ml-2 block text-sm font-medium text-gray-700 dark:text-dark-200">
+                        Card/Credit Card
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className={`w-full bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 ${
+                    isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isSaving ? 'Saving...' : 'Save Receipt & POS Settings'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+        
+        {/* Database Tab */}
+        {activeTab === 'database' && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <h2 className="text-lg font-semibold mb-6 text-dark-800 dark:text-white flex items-center">
+              <IconDatabase size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
+              Database Management
+            </h2>
+            
+            <div className="space-y-6">
+              <div className="bg-green-50 dark:bg-green-900/20 p-5 rounded-lg border border-green-200 dark:border-green-800">
+                <h3 className="text-md font-medium mb-2 text-green-800 dark:text-green-400 flex items-center">
+                  Backup Database
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-dark-300 mb-4">
+                  Export your database to a file that can be used to restore your data later.
+                </p>
+                <button
+                  onClick={handleExportDatabase}
+                  className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 flex items-center justify-center"
+                >
+                  Export Database
+                </button>
+              </div>
+              
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-5 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <h3 className="text-md font-medium mb-2 text-yellow-800 dark:text-yellow-400 flex items-center">
+                  Restore Database
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-dark-300 mb-2">
+                  Import a previously exported database file.
+                </p>
+                <div className="bg-yellow-100 dark:bg-yellow-900/40 p-3 rounded-md mb-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
+                    Warning: This will overwrite your current data.
+                  </p>
+                </div>
+                <button
+                  onClick={handleImportDatabase}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 flex items-center justify-center"
+                >
+                  Import Database
+                </button>
+              </div>
+              
+              <div className="bg-red-50 dark:bg-red-900/20 p-5 rounded-lg border border-red-200 dark:border-red-800">
+                <h3 className="text-md font-medium mb-2 text-red-800 dark:text-red-400 flex items-center">
+                  Reset Database
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-dark-300 mb-2">
+                  Reset your database to factory defaults.
+                </p>
+                <div className="bg-red-100 dark:bg-red-900/40 p-3 rounded-md mb-4">
+                  <p className="text-sm text-red-800 dark:text-red-300 font-medium">
+                    Warning: This will permanently delete ALL your data including products, categories, and transactions. This action CANNOT be undone.
+                  </p>
+                </div>
+                <button
+                  onClick={handleResetDatabase}
+                  className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150 flex items-center justify-center"
+                >
+                  Reset All Data
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Developer Tab */}
+        {activeTab === 'developer' && isDevelopmentMode && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-dark-800 dark:text-white flex items-center">
+                <IconCode size={20} className="mr-2 text-primary-500 dark:text-primary-400" />
+                Developer Tools
+              </h2>
+              <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-500 text-xs rounded-full">
+                Development Only
+              </span>
             </div>
             
-            <div className="pt-4 border-t border-gray-200 dark:border-dark-500">
-              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Restore Database</h3>
-              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
-                Import a previously exported database file.
-                <span className="text-red-500 dark:text-red-400 font-medium"> Warning: This will overwrite your current data.</span>
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-lg border border-indigo-200 dark:border-indigo-800">
+              <h3 className="text-md font-medium mb-2 text-indigo-800 dark:text-indigo-400 flex items-center">
+                Sample Data Generator
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-dark-300 mb-4">
+                Generate sample products and categories for development and testing purposes.
               </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                    Number of Categories
+                  </label>
+                  <input
+                    type="number"
+                    name="numCategories"
+                    value={seederState.numCategories}
+                    onChange={handleSeederChange}
+                    min="1"
+                    max="50"
+                    className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
+                    Number of Products
+                  </label>
+                  <input
+                    type="number"
+                    name="numProducts"
+                    value={seederState.numProducts}
+                    onChange={handleSeederChange}
+                    min="1"
+                    max="100"
+                    className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
+                  />
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="clearExisting"
+                    name="clearExisting"
+                    checked={seederState.clearExisting}
+                    onChange={handleSeederChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="clearExisting" className="ml-2 block text-sm text-gray-700 dark:text-dark-200">
+                    Clear existing products and categories
+                  </label>
+                </div>
+                <div className="mt-2 bg-red-100 dark:bg-red-900/40 p-3 rounded-md">
+                  <p className="text-xs text-red-800 dark:text-red-300">
+                    Warning: This will delete all existing products and categories before generating new ones.
+                  </p>
+                </div>
+              </div>
+              
               <button
-                onClick={handleImportDatabase}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
+                type="button"
+                onClick={handleRunSeeder}
+                disabled={seederState.isLoading}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Import Database
-              </button>
-            </div>
-            
-            <div className="pt-4 border-t border-gray-200 dark:border-dark-500">
-              <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Advanced</h3>
-              <p className="text-sm text-gray-600 dark:text-dark-300 mb-3">
-                Reset your database to factory defaults.
-                <span className="text-red-500 dark:text-red-400 font-medium"> Warning: This action cannot be undone.</span>
-              </p>
-              <button
-                onClick={handleResetDatabase}
-                className="w-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-150"
-              >
-                Reset All Data
+                {seederState.isLoading ? (
+                  <>
+                    <IconLoader2 className="animate-spin mr-2 h-4 w-4 text-white" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Sample Data'
+                )}
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
-      
-      {/* Developer Tools Section - Only shown when isDevelopmentMode is true */}
-      {isDevelopmentMode && (
-        <div className="col-span-1 md:col-span-2 bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 mt-6 transition-colors duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-dark-800 dark:text-white">Developer Tools</h2>
-            <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-500 text-xs rounded-full">
-              Development Only
-            </span>
-          </div>
-          
-          <div className="border-t border-gray-200 dark:border-dark-600 pt-4">
-            <h3 className="text-md font-medium mb-2 text-dark-800 dark:text-white">Sample Data Generator</h3>
-            <p className="text-sm text-gray-600 dark:text-dark-300 mb-4">
-              Generate sample products and categories for development and testing purposes.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Number of Categories
-                </label>
-                <input
-                  type="number"
-                  name="numCategories"
-                  value={seederState.numCategories}
-                  onChange={handleSeederChange}
-                  min="1"
-                  max="50"
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
-                  Number of Products
-                </label>
-                <input
-                  type="number"
-                  name="numProducts"
-                  value={seederState.numProducts}
-                  onChange={handleSeederChange}
-                  min="1"
-                  max="100"
-                  className="w-full border border-gray-300 dark:border-dark-500 p-2 rounded-md bg-white dark:bg-dark-600 text-dark-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="clearExisting"
-                  name="clearExisting"
-                  checked={seederState.clearExisting}
-                  onChange={handleSeederChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="clearExisting" className="ml-2 block text-sm text-gray-700 dark:text-dark-200">
-                  Clear existing products and categories
-                </label>
-              </div>
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                Warning: This will delete all existing products and categories before generating new ones.
-              </p>
-            </div>
-            
-            <button
-              type="button"
-              onClick={handleRunSeeder}
-              disabled={seederState.isLoading}
-              className="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {seederState.isLoading ? (
-                <>
-                  <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                'Generate Sample Data'
-              )}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
