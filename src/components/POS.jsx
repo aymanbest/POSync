@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReceiptModal from './POS/ReceiptModal';
-import BarcodeScanner from './BarcodeScanner';
+import QRCodeScanner from './BarcodeScanner';
 import { 
   IconShoppingCart, 
   IconSearch, 
@@ -1108,7 +1108,7 @@ const POS = () => {
                 <IconX size={24} />
               </button>
             </div>
-            <BarcodeScanner 
+            <QRCodeScanner 
               onDetected={handleBarcodeDetected} 
               onClose={() => setShowScanner(false)}
             />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import BarcodeScanner from './BarcodeScanner';
+import QRCodeScanner from './BarcodeScanner';
 
 const Products = () => {
   const navigate = useNavigate();
@@ -666,9 +666,9 @@ const Products = () => {
       
       {/* Barcode Scanner */}
       {showScanner && (
-        <BarcodeScanner 
-          onDetected={handleBarcodeDetected} 
-          onClose={() => setShowScanner(false)} 
+        <QRCodeScanner
+          onDetected={handleBarcodeDetected}
+          onClose={() => setShowScanner(false)}
         />
       )}
       

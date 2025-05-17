@@ -8,16 +8,32 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
   const [isRendered, setIsRendered] = useState(false);
   const [error, setError] = useState(null);
   const [receiptHeight, setReceiptHeight] = useState(0);
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    // Fetch settings when component mounts
+    const fetchSettings = async () => {
+      try {
+        const settingsData = await window.api.settings.getSettings();
+        setSettings(settingsData);
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     // Debug logging
     console.log('Receipt Modal Data:', transactionData);
     console.log('Business Info:', businessInfo);
+    console.log('Settings:', settings);
     
-    if (isOpen && transactionData) {
+    if (isOpen && transactionData && settings) {
       try {
         // Generate receipt using the main process via IPC
-        generateReceiptSvg(transactionData, businessInfo)
+        generateReceiptSvg(transactionData, businessInfo, settings)
           .then(svg => {
             setReceiptSvg(svg);
             setIsRendered(true);
@@ -52,10 +68,10 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [isOpen, transactionData, businessInfo]);
+  }, [isOpen, transactionData, businessInfo, settings]);
 
   // Function to generate receipt SVG via IPC
-  const generateReceiptSvg = async (data, business) => {
+  const generateReceiptSvg = async (data, business, settings) => {
     // Format the receipt data
     const receiptData = {
       businessName: business?.businessName || 'POS System',
@@ -72,7 +88,8 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
       paymentMethod: data.paymentMethod,
       paymentAmount: data.paymentAmount,
       change: data.change,
-      footer: "Thanks for coming!"
+      footer: "Thanks for coming!",
+      currency: settings?.currency || 'MAD'
     };
     
     // Call the main process to generate the receipt
@@ -135,7 +152,7 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
   const handleShare = async () => {
     try {
       // Generate receipt SVG through main process
-      const svg = await generateReceiptSvg(transactionData, businessInfo);
+      const svg = await generateReceiptSvg(transactionData, businessInfo, settings);
       
       // Create a canvas element
       const canvas = document.createElement('canvas');
@@ -195,7 +212,8 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
         paymentMethod: transactionData.paymentMethod,
         paymentAmount: transactionData.paymentAmount,
         change: transactionData.change,
-        footer: "Thanks for coming!"
+        footer: "Thanks for coming!",
+        currency: settings?.currency || 'MAD'
       };
       
       // Call the print API
@@ -297,6 +315,11 @@ const ReceiptModal = ({ isOpen, onClose, transactionData, businessInfo }) => {
               max-width: 300px;
               margin: 0 auto;
               height: auto !important;
+            }
+            
+            /* QR Code specific styling */
+            .receipt-content svg image {
+              image-rendering: pixelated;
             }
             
             /* Hide scrollbar but allow scrolling if needed */

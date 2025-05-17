@@ -5,8 +5,28 @@ const receiptline = require('receiptline');
 
 let printWindow = null;
 
+// Helper function to get currency symbol
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'CNY': '¥',
+    'INR': '₹',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'MAD': 'DH'
+  };
+  
+  return symbols[currencyCode] || currencyCode;
+};
+
 // Build receipt document using receiptline markdown syntax
 const buildReceiptDocument = (data) => {
+  // Get currency symbol
+  const currencySymbol = getCurrencySymbol(data.currency || 'MAD');
+  
   // Header section with business info
   let doc = `
 {align:center}
@@ -20,45 +40,61 @@ Date: ${data.date}
 Receipt: ${data.receiptId}
 --------------------------
 
-{width:24,10,8}
-Item | Qty | Total
+`;
+
+  // Add QR code with receipt ID and date
+  const qrData = `ID:${data.receiptId},Date:${data.date},Total:${parseFloat(data.total).toFixed(2)}`;
+  doc += `
+{align:center}
+{code:${qrData};option:qrcode,5,m}
+
+{align:left}
+`;
+
+  // Items section with clearer layout
+  doc += `
+{width:24,8,10}
+{border:line}
+Item | Qty | Price
 {border:line}
 `;
 
   // Add items
   data.items.forEach(item => {
     const itemTotal = (parseFloat(item.price) * parseInt(item.quantity)).toFixed(2);
-    doc += `${item.name} | ${item.quantity}x $${parseFloat(item.price).toFixed(2)} | $${itemTotal}\n`;
+    doc += `${item.name} | ${item.quantity} | ${currencySymbol}${itemTotal}\n`;
   });
 
   // Add totals section
   doc += `
 {border:line}
 {align:right}
-Subtotal: $${parseFloat(data.subtotal).toFixed(2)}
+{width:32,10}
+Subtotal: | ${currencySymbol}${parseFloat(data.subtotal).toFixed(2)}
 `;
 
   // Add discount if present
   if (data.discount > 0) {
-    doc += `Discount: -$${parseFloat(data.discount).toFixed(2)}\n`;
+    doc += `Discount: | -${currencySymbol}${parseFloat(data.discount).toFixed(2)}\n`;
   }
 
   // Add tax
-  doc += `Tax: $${parseFloat(data.tax).toFixed(2)}\n`;
+  doc += `Tax: | ${currencySymbol}${parseFloat(data.tax).toFixed(2)}\n`;
   
   // Add total
-  doc += `^^TOTAL: $${parseFloat(data.total).toFixed(2)}^^\n`;
+  doc += `^^TOTAL: | ${currencySymbol}${parseFloat(data.total).toFixed(2)}^^\n`;
   
   // Add payment info
   doc += `
 {align:left}
+{width:*}
 Payment Method: ${data.paymentMethod}
-Amount Received: $${parseFloat(data.paymentAmount).toFixed(2)}
+Amount Received: ${currencySymbol}${parseFloat(data.paymentAmount).toFixed(2)}
 `;
 
   // Add change if present
   if (data.change > 0) {
-    doc += `Change: $${parseFloat(data.change).toFixed(2)}\n`;
+    doc += `Change: ${currencySymbol}${parseFloat(data.change).toFixed(2)}\n`;
   }
 
   // Add footer
@@ -66,8 +102,6 @@ Amount Received: $${parseFloat(data.paymentAmount).toFixed(2)}
 --------------------------
 {align:center}
 ${data.footer || "Thanks for coming!"}
-
-{code:${data.receiptId};option:code128,3,40,hri}
 `;
 
   return doc;

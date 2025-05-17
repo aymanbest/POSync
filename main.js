@@ -3,6 +3,12 @@ const path = require('path');
 const { setupDbHandlers } = require('./src/controllers/db-controller');
 const { setupPrintHandlers } = require('./src/controllers/print-controller');
 const { setupEnvHandlers } = require('./src/controllers/env-controller');
+const { seedDatabase } = require('./src/db/seeder');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file
+dotenv.config();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -26,6 +32,31 @@ if (process.argv.includes('--dev')) {
 }
 
 let mainWindow;
+
+// Function to run database seeder if enabled
+async function runDatabaseSeeder() {
+  // Check if SEED_DATABASE is true in the .env file
+  if (process.env.SEED_DATABASE === 'true') {
+    console.log('SEED_DATABASE is enabled. Running database seeder...');
+    
+    try {
+      const result = await seedDatabase({
+        enabled: true,
+        numCategories: 10,
+        numProducts: 30,
+        clearExisting: true, // Clear existing data before seeding
+        seedPriceMin: 5,
+        seedPriceMax: 500,
+        seedStockMin: 1,
+        seedStockMax: 100
+      });
+      
+      console.log('Database seeding result:', result);
+    } catch (error) {
+      console.error('Error running database seeder:', error);
+    }
+  }
+}
 
 function createWindow() {
   // Get the screen dimensions
@@ -86,7 +117,7 @@ function createWindow() {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
-app.on('ready', () => {
+app.on('ready', async () => {
   // Set default Content Security Policy for all sessions
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
@@ -99,6 +130,9 @@ app.on('ready', () => {
     });
   });
 
+  // Run database seeder if enabled
+  await runDatabaseSeeder();
+  
   createWindow();
   
   // Set up handlers

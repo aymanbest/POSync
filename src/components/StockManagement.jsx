@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import BarcodeScanner from './BarcodeScanner';
+import QRCodeScanner from './BarcodeScanner';
 
 const StockManagement = () => {
   const location = useLocation();
@@ -442,7 +442,7 @@ const StockManagement = () => {
                 </svg>
               </button>
             </div>
-            <BarcodeScanner 
+            <QRCodeScanner 
               onDetected={handleBarcodeDetected} 
               onClose={() => setShowScanner(false)}
             />

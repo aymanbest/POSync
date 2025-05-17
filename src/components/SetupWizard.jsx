@@ -135,9 +135,6 @@ const SetupWizard = ({ onComplete }) => {
           password: formData.adminPassword
         });
         
-        // Initialize default categories
-        await window.api.database.initializeDefaults();
-        
         // Complete setup
         onComplete();
       } catch (error) {

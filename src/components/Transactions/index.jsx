@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReceiptModal from '../POS/ReceiptModal';
 import RefundModal from './RefundModal';
+import QRCodeScanner from '../BarcodeScanner';
 import {
   IconSearch,
   IconCalendar,
@@ -9,7 +10,8 @@ import {
   IconChevronRight,
   IconX,
   IconFilter,
-  IconArrowBackUp
+  IconArrowBackUp,
+  IconQrcode
 } from '@tabler/icons-react';
 
 const Transactions = () => {
@@ -20,6 +22,7 @@ const Transactions = () => {
   const [settings, setSettings] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -241,6 +244,37 @@ const Transactions = () => {
     fetchTransactions();
   };
 
+  // Handle QR code detection
+  const handleQRCodeDetected = (qrData) => {
+    console.log('QR Code detected:', qrData);
+    
+    try {
+      // Parse the QR code data
+      // Expected format: "ID:INV664933,Date:16/05/2025 23:31:04,Total:700.00"
+      const receiptIdMatch = qrData.match(/ID:([^,]+)/);
+      
+      if (receiptIdMatch && receiptIdMatch[1]) {
+        const receiptId = receiptIdMatch[1];
+        console.log('Receipt ID extracted:', receiptId);
+        
+        // Set the receipt ID as search term
+        setSearchTerm(receiptId);
+        
+        // Find the transaction with this receipt ID
+        const transaction = transactions.find(tx => tx.receiptId === receiptId);
+        
+        if (transaction) {
+          // If transaction is found, show its details directly
+          handleViewDetails(transaction._id);
+        }
+      } else {
+        console.log('Could not extract receipt ID from QR code');
+      }
+    } catch (error) {
+      console.error('Error parsing QR code data:', error);
+    }
+  };
+
   // Update the loading state to match dark mode theme
   if (isLoading) {
     return (
@@ -262,21 +296,31 @@ const Transactions = () => {
       {/* Search and Filters */}
       <div className="bg-white dark:bg-dark-700 rounded-xl shadow-soft dark:shadow-none p-5 mb-6 transition-colors duration-200">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Search input */}
+          {/* Search input with QR code scanner button */}
           <div>
             <label htmlFor="search" className="block text-sm font-medium text-dark-700 dark:text-dark-200 mb-2">Search</label>
-            <div className="relative">
-              <input
-                type="text"
-                id="search"
-                className="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-dark-600 text-dark-800 dark:text-white border border-gray-200 dark:border-dark-500 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400 transition-colors duration-200"
-                placeholder="Search transactions..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-dark-400 dark:text-dark-300">
-                <IconSearch size={18} />
+            <div className="relative flex">
+              <div className="relative flex-grow">
+                <input
+                  type="text"
+                  id="search"
+                  className="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-dark-600 text-dark-800 dark:text-white border border-gray-200 dark:border-dark-500 rounded-l-lg focus:ring-primary-500 focus:border-primary-500 dark:focus:ring-primary-400 dark:focus:border-primary-400 transition-colors duration-200"
+                  placeholder="Search transactions..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-dark-400 dark:text-dark-300">
+                  <IconSearch size={18} />
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowQRScanner(true)}
+                className="bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white p-2.5 rounded-r-lg transition-colors duration-150 flex items-center justify-center"
+                title="Scan QR Code"
+              >
+                <IconQrcode size={18} />
+              </button>
             </div>
           </div>
           
@@ -654,6 +698,14 @@ const Transactions = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* QR Code Scanner Modal */}
+      {showQRScanner && (
+        <QRCodeScanner
+          onDetected={handleQRCodeDetected}
+          onClose={() => setShowQRScanner(false)}
+        />
       )}
       
       {/* Receipt Modal */}
