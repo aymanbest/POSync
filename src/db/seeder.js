@@ -1,5 +1,6 @@
 const db = require('./index');
-const { faker } = require('@faker-js/faker');
+// Only require faker when needed
+let faker;
 
 // Seed categories and products for development
 async function seedDatabase(options = {}) {
@@ -18,6 +19,14 @@ async function seedDatabase(options = {}) {
   if (!enabled) {
     console.log('Database seeding is disabled.');
     return { success: false, message: 'Seeding is disabled' };
+  }
+
+  // Only require faker when seeding is enabled
+  try {
+    faker = require('@faker-js/faker').faker;
+  } catch (error) {
+    console.error('Failed to load @faker-js/faker:', error);
+    return { success: false, message: 'Failed to load faker module' };
   }
 
   console.log('Starting database seeding...');

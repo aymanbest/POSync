@@ -90,6 +90,10 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:addProduct', async (event, product) => {
     try {
+      // Remove empty barcode fields to avoid unique constraint issues
+      if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+        delete product.barcode;
+      }
       return await promisify(db.products.insert.bind(db.products), product);
     } catch (error) {
       console.error('Error adding product:', error);
@@ -99,6 +103,10 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:updateProduct', async (event, id, product) => {
     try {
+      // Remove empty barcode fields to avoid unique constraint issues
+      if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+        delete product.barcode;
+      }
       return await promisify(
         db.products.update.bind(db.products),
         { _id: id },
@@ -304,8 +312,8 @@ const setupDbHandlers = () => {
       return await promisify(
         db.settings.update.bind(db.settings),
         { _id: 'app-settings' },
-        { $set: settings },
-        {}
+        { $set: { ...settings, _id: 'app-settings' } },
+        { upsert: true }
       );
     } catch (error) {
       console.error('Error updating settings:', error);

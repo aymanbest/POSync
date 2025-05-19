@@ -144,10 +144,6 @@ const Login = ({ onLogin, darkMode, toggleDarkMode }) => {
               )}
             </button>
           </div>
-
-          <div className="text-center text-sm text-dark-500 dark:text-dark-300">
-            <p>Default admin credentials: admin / admin</p>
-          </div>
         </form>
       </div>
     </div>

@@ -200,14 +200,16 @@ const POS = () => {
   const handleBarcodeDetected = (barcode) => {
     if (!barcode) return;
     
-    const product = products.find(p => p.barcode === barcode);
+    // Find product with exact barcode match
+    const product = products.find(p => p.barcode && p.barcode === barcode);
     
     if (product) {
       // Check if product is in stock before adding
       if (product.stock <= 0) {
         showNotification(`${product.name} is out of stock`, 'error');
       } else {
-        addToCart(product);
+        // Mark product as coming from barcode scanner
+        addToCart({...product, _scanOrigin: true});
         showNotification(`Added ${product.name} to cart`, 'success');
       }
     } else {
@@ -229,14 +231,16 @@ const POS = () => {
     
     if (!barcode) return;
     
-    const product = products.find(p => p.barcode === barcode);
+    // Find product with exact barcode match
+    const product = products.find(p => p.barcode && p.barcode === barcode);
     
     if (product) {
       // Check if product is in stock before adding
       if (product.stock <= 0) {
         showNotification(`${product.name} is out of stock`, 'error');
       } else {
-        addToCart(product);
+        // Mark product as coming from barcode scanner
+        addToCart({...product, _scanOrigin: true});
       }
       e.target.barcode.value = '';
     } else {
@@ -245,6 +249,12 @@ const POS = () => {
   };
 
   const addToCart = (product) => {
+    // Check if product has a valid barcode when added through barcode scanner
+    if (product._scanOrigin && (!product.barcode || product.barcode.trim() === '')) {
+      showNotification(`${product.name} has no barcode assigned`, 'error');
+      return;
+    }
+    
     // Get the effective stock (current stock minus what's already in cart)
     const effectiveStock = product.effectiveStock !== undefined ? 
       product.effectiveStock : getEffectiveStock(product);
@@ -335,7 +345,7 @@ const POS = () => {
       const matchesSearch = 
         searchTerm === '' ||
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.barcode.includes(searchTerm);
+        (product.barcode && product.barcode.includes(searchTerm));
       
       return matchesCategory && matchesSearch;
     });

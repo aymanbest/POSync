@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import QRCodeScanner from './BarcodeScanner';
+import ProductCamera from './ProductCamera';
 
 const Products = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const Products = () => {
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [settings, setSettings] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -216,11 +218,62 @@ const Products = () => {
     reader.readAsDataURL(file);
   };
 
+  // Handle image captured from camera
+  const handleCameraCapture = (imageData) => {
+    // The imageData is already a data URL from the camera component
+    const img = new Image();
+    img.onload = () => {
+      // If image is large, resize it
+      const maxWidth = 800;
+      const maxHeight = 800;
+      let width = img.width;
+      let height = img.height;
+      
+      // Resize if image is too large
+      if (width > maxWidth || height > maxHeight) {
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round(height * (maxWidth / width));
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round(width * (maxHeight / height));
+            height = maxHeight;
+          }
+        }
+        
+        // Create canvas to resize image
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Get resized data URL
+        const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+        setSelectedImagePreview(resizedImage);
+        setFormData(prev => ({
+          ...prev,
+          imageData: resizedImage
+        }));
+      } else {
+        // Image is already small enough, use as-is
+        setSelectedImagePreview(imageData);
+        setFormData(prev => ({
+          ...prev,
+          imageData: imageData
+        }));
+      }
+    };
+    img.src = imageData;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.name || !formData.barcode || formData.price === '') {
+    if (!formData.name || formData.price === '') {
       showNotification('Please fill all required fields', 'error');
       return;
     }
@@ -514,7 +567,7 @@ const Products = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-1">
-                    Barcode*
+                    Barcode (optional)
                   </label>
                   <div className="flex items-center">
                     <input
@@ -523,7 +576,6 @@ const Products = () => {
                       value={formData.barcode}
                       onChange={handleInputChange}
                       className="w-full border border-gray-300 dark:border-dark-500 bg-white dark:bg-dark-600 text-dark-800 dark:text-white p-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-                      required
                     />
                     <button
                       type="button"
@@ -609,20 +661,33 @@ const Products = () => {
                         <img 
                           src={selectedImagePreview} 
                           alt="Product preview" 
-                          className="h-10 w-10" 
+                          className="h-20 w-20 object-cover" 
                         />
                       ) : (
                         <span className="text-gray-400 dark:text-dark-400">Image</span>
                       )}
                     </div>
                     <div className="flex-1">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleImageChange}
-                        className="block w-full text-sm text-gray-500 dark:text-dark-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/40 transition-colors duration-150"
-                      />
+                      <div className="flex space-x-2 mb-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={fileInputRef}
+                          onChange={handleImageChange}
+                          className="block w-full text-sm text-gray-500 dark:text-dark-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/40 transition-colors duration-150"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCamera(true)}
+                          className="flex-shrink-0 px-3 py-2 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-md transition-colors duration-150"
+                          title="Take Photo"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                      </div>
                       <p className="mt-1 text-xs text-gray-500 dark:text-dark-400">
                         Recommended: Square images under 1MB
                       </p>
@@ -669,6 +734,14 @@ const Products = () => {
         <QRCodeScanner
           onDetected={handleBarcodeDetected}
           onClose={() => setShowScanner(false)}
+        />
+      )}
+      
+      {/* Product Camera */}
+      {showCamera && (
+        <ProductCamera
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
         />
       )}
       
@@ -744,7 +817,7 @@ const Products = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.barcode}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{product.barcode || 'N/A'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-dark-300">{getCategoryName(product.categoryId)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-dark-800 dark:text-white">
                       {formatCurrency(product.price)}

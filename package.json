@@ -1,7 +1,7 @@
 {
-  "name": "electron-pos",
+  "name": "posync",
   "version": "1.0.0",
-  "description": "Electron POS Application with NeDB",
+  "description": "POSync Application with NeDB",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -21,10 +21,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@faker-js/faker": "^9.8.0",
     "@tabler/icons-react": "^3.31.0",
     "@zxing/library": "^0.21.3",
     "dotenv": "^16.5.0",
-    "electron": "^25.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.1.0",
     "framer-motion": "^10.16.4",
@@ -46,7 +46,7 @@
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
-    "@faker-js/faker": "^9.8.0",
+    "electron": "^25.0.0",
     "assert": "^2.1.0",
     "babel-loader": "^9.1.2",
     "browserify-zlib": "^0.2.0",
@@ -61,8 +61,8 @@
     "webpack-cli": "^5.1.1"
   },
   "build": {
-    "appId": "com.electronpos.app",
-    "productName": "Electron POS",
+    "appId": "com.posync.app",
+    "productName": "POSync",
     "directories": {
       "output": "dist"
     },
@@ -84,19 +84,19 @@
       "target": [
         "nsis"
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icons/win/icon.ico"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "icon": "build/icon.icns"
+      "icon": "build/icons/mac/icon.icns"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icons/png"
     },
     "nsis": {
       "oneClick": false,

@@ -31,7 +31,7 @@ const db = {
 };
 
 // Create indexes
-db.products.ensureIndex({ fieldName: 'barcode', unique: true });
+db.products.ensureIndex({ fieldName: 'barcode', unique: true, sparse: true });
 db.categories.ensureIndex({ fieldName: 'name', unique: true });
 db.users.ensureIndex({ fieldName: 'username', unique: true });
 

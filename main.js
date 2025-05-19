@@ -132,7 +132,7 @@ app.on('ready', async () => {
 
   // Run database seeder if enabled
   await runDatabaseSeeder();
-  
+
   createWindow();
   
   // Set up handlers
