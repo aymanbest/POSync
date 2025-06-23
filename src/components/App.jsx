@@ -48,6 +48,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [appVersion, setAppVersion] = useState('1.0.0');
 
   useEffect(() => {
     // Check if setup is complete
@@ -138,10 +139,21 @@ const App = () => {
       }
     };
 
+    // Load app version from environment
+    const loadAppVersion = async () => {
+      try {
+        const version = await window.api.env.get('APP_VERSION', '1.0.0');
+        setAppVersion(version);
+      } catch (error) {
+        console.error('Error loading app version:', error);
+      }
+    };
+
     const initializeApp = async () => {
       await checkSetup();
       checkAuth();
       checkTheme();
+      await loadAppVersion();
       setIsLoading(false);
     };
 
@@ -303,7 +315,7 @@ const App = () => {
             <footer className="py-2 px-4 bg-white dark:bg-dark-700 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-dark-600 transition-colors duration-200">
               <div className="container mx-auto flex justify-between items-center">
                 <div>© {new Date().getFullYear()} Electron POS</div>
-                <div>Version 1.0.0</div>
+                <div>Version {appVersion}</div>
               </div>
             </footer>
           </>

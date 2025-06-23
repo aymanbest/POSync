@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IconLoader2, IconBuilding, IconCash, IconReceipt, IconDatabase, IconCode, IconSettings } from '@tabler/icons-react';
+import { IconLoader2, IconBuilding, IconCash, IconReceipt, IconDatabase, IconCode, IconSettings, IconCloudComputing } from '@tabler/icons-react';
+import SyncSettings from './SyncSettings';
 
 const Settings = () => {
   const [settings, setSettings] = useState(null);
@@ -306,6 +307,18 @@ const Settings = () => {
           >
             <IconReceipt size={20} className="mr-2" />
             Receipt
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sync')}
+            className={`flex items-center px-5 py-3 font-medium text-sm transition-colors duration-150 whitespace-nowrap
+              ${activeTab === 'sync' 
+                ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-500 dark:border-primary-400' 
+                : 'text-gray-500 dark:text-dark-300 hover:text-dark-800 dark:hover:text-white'
+              }`}
+          >
+            <IconCloudComputing size={20} className="mr-2" />
+            Sync
           </button>
           
           <button
@@ -671,6 +684,13 @@ const Settings = () => {
           </div>
         )}
         
+        {/* Sync Tab */}
+        {activeTab === 'sync' && (
+          <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
+            <SyncSettings />
+          </div>
+        )}
+        
         {/* Database Tab */}
         {activeTab === 'database' && (
           <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
@@ -739,7 +759,7 @@ const Settings = () => {
         )}
         
         {/* Developer Tab */}
-        {activeTab === 'developer' && isDevelopmentMode && (
+        {isDevelopmentMode && activeTab === 'developer' && (
           <div className="bg-white dark:bg-dark-700 rounded-lg shadow-soft dark:shadow-none p-6 transition-colors duration-200">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-dark-800 dark:text-white flex items-center">
@@ -834,4 +854,4 @@ const Settings = () => {
   );
 };
 
-export default Settings; 
+export default Settings;

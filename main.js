@@ -4,6 +4,8 @@ const { setupDbHandlers } = require('./src/controllers/db-controller');
 const { setupPrintHandlers } = require('./src/controllers/print-controller');
 const { setupEnvHandlers } = require('./src/controllers/env-controller');
 const { seedDatabase } = require('./src/db/seeder');
+const db = require('./src/db');
+const SyncServer = require('./src/db/sync-server');
 const fs = require('fs');
 const dotenv = require('dotenv');
 
@@ -32,6 +34,35 @@ if (process.argv.includes('--dev')) {
 }
 
 let mainWindow;
+let syncServer = null;
+
+// Initialize database system
+async function initializeDatabase() {
+  try {
+    console.log('Initializing database system...');
+    const result = await db.initializeDatabase();
+    
+    if (result.success) {
+      console.log(`Database initialized successfully. Using ${result.useRxDb ? 'RxDB' : 'NeDB'}`);
+      
+      // Start sync server if enabled in development
+      if (process.env.START_SYNC_SERVER === 'true') {
+        syncServer = new SyncServer({
+          port: process.env.SYNC_SERVER_PORT || 3001
+        });
+        await syncServer.start();
+        console.log('Sync server started');
+      }
+    } else {
+      console.warn('Database initialization had issues:', result.error);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    return { success: false, error };
+  }
+}
 
 // Function to run database seeder if enabled
 async function runDatabaseSeeder() {
@@ -81,7 +112,29 @@ function createWindow() {
       // Add permissions for camera
       permissions: ['camera'],
       // Allow Web Workers
-      webSecurity: true
+      webSecurity: true,
+      // Disable developer tools in production
+      devTools: process.argv.includes('--dev')
+    }
+  });
+
+  // Disable context menu to prevent right-click inspect element
+  mainWindow.webContents.on('context-menu', (e, params) => {
+    // Only allow context menu in dev mode
+    if (!process.argv.includes('--dev')) {
+      e.preventDefault();
+    }
+  });
+
+  // Prevent keyboard shortcuts for opening dev tools
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // Block F12 and Ctrl+Shift+I in production
+    if (!process.argv.includes('--dev')) {
+      if (input.key === 'F12' || 
+          (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+          (input.control && input.shift && input.key.toLowerCase() === 'c')) {
+        event.preventDefault();
+      }
     }
   });
 
@@ -118,6 +171,15 @@ function createWindow() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', async () => {
+  // Disable developer tools globally in production
+  if (!process.argv.includes('--dev')) {
+    app.on('browser-window-created', (_, window) => {
+      window.webContents.on('devtools-opened', () => {
+        window.webContents.closeDevTools();
+      });
+    });
+  }
+
   // Set default Content Security Policy for all sessions
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
@@ -130,15 +192,18 @@ app.on('ready', async () => {
     });
   });
 
-  // Run database seeder if enabled
-  await runDatabaseSeeder();
+  // Initialize database first
+  await initializeDatabase();
 
-  createWindow();
-  
   // Set up handlers
   setupDbHandlers();
   setupPrintHandlers();
   setupEnvHandlers();
+
+  // Run database seeder if enabled
+  await runDatabaseSeeder();
+
+  createWindow();
   
   // Handle window control events from renderer
   ipcMain.on('window:minimize', () => {
@@ -161,7 +226,24 @@ app.on('ready', async () => {
 });
 
 // Quit when all windows are closed, except on macOS.
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  // Stop sync server if running
+  if (syncServer) {
+    await syncServer.stop();
+  }
+  
+  // Close database connections
+  if (db.isUsingRxDb()) {
+    try {
+      const rxDatabase = await db.getCurrentDatabase();
+      if (rxDatabase) {
+        await rxDatabase.destroy();
+      }
+    } catch (error) {
+      console.error('Error closing database:', error);
+    }
+  }
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }

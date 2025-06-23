@@ -1,7 +1,7 @@
 {
   "name": "posync",
-  "version": "1.0.0",
-  "description": "POSync Application with NeDB",
+  "version": "1.1.1",
+  "description": "Modern Point of Sale Application with Sync Capabilities",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -11,27 +11,49 @@
     "build-react": "webpack --config webpack.config.js",
     "build-css": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css",
     "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css"
-  },
-  "keywords": [
+  },  "keywords": [
     "pos",
+    "point-of-sale",
     "electron",
     "retail",
-    "point-of-sale"
-  ],
-  "author": "",
+    "inventory",
+    "sales",
+    "cash-register",
+    "business",
+    "nedb",
+    "offline",
+    "react",
+    "sync"
+  ],  "author": "POSync Team",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/posync.git"
+  },
+  "homepage": "https://github.com/yourusername/posync#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/posync/issues"
+  },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
     "@tabler/icons-react": "^3.31.0",
     "@zxing/library": "^0.21.3",
+    "axios": "^1.10.0",
+    "dexie": "^4.0.11",
     "dotenv": "^16.5.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.1.0",
+    "express": "^4.19.2",
+    "express-pouchdb": "^4.2.0",
     "framer-motion": "^10.16.4",
     "html-to-image": "^1.11.13",
     "html5-qrcode": "^2.3.8",
     "jsbarcode": "^3.11.6",
     "nedb": "^1.8.0",
+    "pouchdb": "^8.0.1",
+    "pouchdb-adapter-leveldb": "^8.0.1",
+    "pouchdb-adapter-memory": "^8.0.1",
+    "pouchdb-replication": "^8.0.1",
     "qrcode": "^1.5.4",
     "quagga": "^0.12.1",
     "react": "^18.2.0",
@@ -40,18 +62,21 @@
     "react-router-dom": "^6.10.0",
     "receiptline": "^1.16.2",
     "recharts": "^2.15.3",
-    "tailwindcss": "^3.3.0"
+    "rxdb": "^15.35.0",
+    "rxjs": "^7.8.1",
+    "tailwindcss": "^3.3.0",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
-    "electron": "^25.0.0",
     "assert": "^2.1.0",
     "babel-loader": "^9.1.2",
     "browserify-zlib": "^0.2.0",
     "concurrently": "^9.1.2",
     "css-loader": "^6.8.1",
+    "electron": "^25.0.0",
     "electron-builder": "^24.4.0",
     "electron-reload": "^2.0.0-alpha.1",
     "stream-browserify": "^3.0.0",

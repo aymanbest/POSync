@@ -77,11 +77,25 @@ contextBridge.exposeInMainWorld(
       maximize: () => ipcRenderer.send('window:maximize'),
       close: () => ipcRenderer.send('window:close')
     },
-    
-    // Environment variables
+      // Environment variables
     env: {
       get: (name, defaultValue) => ipcRenderer.invoke('env:get', name, defaultValue),
       isDevelopmentMode: () => ipcRenderer.invoke('env:isDevelopmentMode')
+    },
+    
+    // Sync operations
+    sync: {
+      getConfig: () => ipcRenderer.invoke('sync:getConfig'),
+      updateConfig: (config) => ipcRenderer.invoke('sync:updateConfig', config),
+      getStatus: () => ipcRenderer.invoke('sync:getStatus'),
+      start: (config) => ipcRenderer.invoke('sync:start', config),
+      stop: () => ipcRenderer.invoke('sync:stop'),
+      testConnection: (serverUrl) => ipcRenderer.invoke('sync:testConnection', serverUrl),
+      forcePush: (collection) => ipcRenderer.invoke('sync:forcePush', collection),
+      forcePull: (collection) => ipcRenderer.invoke('sync:forcePull', collection),
+      getLogs: () => ipcRenderer.invoke('sync:getLogs'),
+      getServerStats: () => ipcRenderer.invoke('sync:getServerStats'),
+      getConnectedMachines: () => ipcRenderer.invoke('sync:getConnectedMachines')
     }
   }
-); 
+);

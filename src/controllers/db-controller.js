@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { seedDatabase } = require('../db/seeder');
 
-// Helper to convert callbacks to promises
+// Helper to convert callbacks to promises for NeDB
 const promisify = (dbMethod, ...args) => {
   return new Promise((resolve, reject) => {
     dbMethod(...args, (err, result) => {
@@ -14,8 +14,287 @@ const promisify = (dbMethod, ...args) => {
   });
 };
 
+// Helper to handle both RxDB and NeDB operations
+async function executeDbOperation(operation) {
+  const isUsingRxDb = db.isUsingRxDb();
+  
+  if (isUsingRxDb) {
+    const rxDatabase = await db.getCurrentDatabase();
+    return await operation.rxdb(rxDatabase);
+  } else {
+    return await operation.nedb();
+  }
+}
+
 // Set up IPC handlers for database operations
 const setupDbHandlers = () => {
+  // Initialize database
+  ipcMain.handle('db:initialize', async () => {
+    try {
+      return await db.initializeDatabase();
+    } catch (error) {
+      console.error('Error initializing database:', error);
+      throw error;
+    }
+  });
+
+  // Get database status
+  ipcMain.handle('db:getStatus', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      return {
+        isUsingRxDb: db.isUsingRxDb(),
+        machineId: db.getMachineId(),
+        syncStatus: syncManager ? syncManager.getSyncStatus() : null
+      };
+    } catch (error) {
+      console.error('Error getting database status:', error);
+      throw error;
+    }
+  });
+
+  // Sync operations
+  ipcMain.handle('db:updateSyncSettings', async (event, syncServerUrl, syncEnabled) => {
+    try {
+      await db.updateSyncSettings(syncServerUrl, syncEnabled);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating sync settings:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:forcePush', async (event, collectionName) => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        throw new Error('Sync not enabled');
+      }
+      await syncManager.forcePush(collectionName);
+      return { success: true };
+    } catch (error) {
+      console.error('Error forcing push:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:forcePull', async (event, collectionName) => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        throw new Error('Sync not enabled');
+      }
+      await syncManager.forcePull(collectionName);
+      return { success: true };
+    } catch (error) {
+      console.error('Error forcing pull:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db:getSyncLogs', async (event, limit = 50) => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return [];
+      }
+      return await syncManager.getRecentSyncLogs(limit);
+    } catch (error) {
+      console.error('Error getting sync logs:', error);
+      return [];
+    }
+  });
+
+  // New Sync API handlers
+  ipcMain.handle('sync:getConfig', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return {
+          enabled: false,
+          serverUrl: 'http://localhost:3001',
+          interval: 30,
+          autoReconnect: true,
+          conflictResolution: 'server-wins',
+          machineId: db.getMachineId() || 'pos-' + Math.random().toString(36).substr(2, 9)
+        };
+      }
+      return await syncManager.getConfig();
+    } catch (error) {
+      console.error('Error getting sync config:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:updateConfig', async (event, config) => {
+    try {
+      await db.updateSyncSettings(config.serverUrl, config.enabled);
+      const syncManager = db.getSyncManager();
+      if (syncManager) {
+        await syncManager.updateConfig(config);
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating sync config:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:getStatus', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return {
+          connected: false,
+          lastSync: null,
+          isActive: false,
+          error: null
+        };
+      }
+      return await syncManager.getSyncStatus();
+    } catch (error) {
+      console.error('Error getting sync status:', error);
+      return {
+        connected: false,
+        lastSync: null,
+        isActive: false,
+        error: error.message
+      };
+    }
+  });
+
+  ipcMain.handle('sync:start', async (event, config) => {
+    try {
+      await db.updateSyncSettings(config.serverUrl, true);
+      const syncManager = db.getSyncManager();
+      if (syncManager) {
+        await syncManager.startSync();
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Error starting sync:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:stop', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (syncManager) {
+        await syncManager.stopSync();
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Error stopping sync:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:testConnection', async (event, serverUrl) => {
+    try {
+      const axios = require('axios');
+      const response = await axios.get(`${serverUrl}/health`, { 
+        timeout: 5000 
+      });
+      if (response.status === 200) {
+        return { success: true, message: 'Connection successful' };
+      } else {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      return { success: false, message: error.message };
+    }
+  });
+
+  ipcMain.handle('sync:forcePush', async (event, collection) => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        throw new Error('Sync not enabled');
+      }
+      await syncManager.forcePush(collection);
+      return { success: true };
+    } catch (error) {
+      console.error('Error forcing push:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:forcePull', async (event, collection) => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        throw new Error('Sync not enabled');
+      }
+      await syncManager.forcePull(collection);
+      return { success: true };
+    } catch (error) {
+      console.error('Error forcing pull:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('sync:getLogs', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return [];
+      }
+      return await syncManager.getRecentSyncLogs(50);
+    } catch (error) {
+      console.error('Error getting sync logs:', error);
+      return [];
+    }
+  });
+
+  ipcMain.handle('sync:getServerStats', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return {
+          connectedMachines: 0,
+          totalDocuments: 0,
+          lastActivity: null
+        };
+      }
+      // This would need to be implemented in sync-manager or fetched from server
+      return {
+        connectedMachines: 1, // Mock data for now
+        totalDocuments: 0,
+        lastActivity: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting server stats:', error);
+      return {
+        connectedMachines: 0,
+        totalDocuments: 0,
+        lastActivity: null
+      };
+    }
+  });
+
+  ipcMain.handle('sync:getConnectedMachines', async () => {
+    try {
+      const syncManager = db.getSyncManager();
+      if (!syncManager) {
+        return [];
+      }
+      // This would typically fetch from the sync server
+      // For now, return mock data or implement server endpoint
+      return [
+        {
+          id: db.getMachineId(),
+          lastSeen: new Date().toISOString(),
+          status: 'online'
+        }
+      ];
+    } catch (error) {
+      console.error('Error getting connected machines:', error);
+      return [];
+    }
+  });
+
   // Seeder handler for development purposes
   ipcMain.handle('db:seedDatabase', async (event, options) => {
     try {
@@ -29,7 +308,15 @@ const setupDbHandlers = () => {
   // Product handlers
   ipcMain.handle('db:getProducts', async () => {
     try {
-      return await promisify(db.products.find.bind(db.products), {});
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const docs = await rxDatabase.products.find().exec();
+          return docs.map(doc => doc.toJSON());
+        },
+        nedb: async () => {
+          return await promisify(db.products.find.bind(db.products), {});
+        }
+      });
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
@@ -39,40 +326,71 @@ const setupDbHandlers = () => {
   // Update product stock after transaction
   ipcMain.handle('db:updateProductStock', async (event, stockUpdates) => {
     try {
-      const results = [];
-      
-      // Process each update sequentially to avoid race conditions
-      for (const update of stockUpdates) {
-        // Get current product
-        const product = await promisify(
-          db.products.findOne.bind(db.products), 
-          { _id: update.productId }
-        );
-        
-        if (!product) {
-          throw new Error(`Product not found: ${update.productId}`);
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const results = [];
+          
+          for (const update of stockUpdates) {
+            const product = await rxDatabase.products.findOne(update.productId).exec();
+            
+            if (!product) {
+              throw new Error(`Product not found: ${update.productId}`);
+            }
+            
+            const oldStock = product.stock;
+            const newStock = Math.max(0, oldStock - update.quantity);
+            
+            await product.update({
+              $set: {
+                stock: newStock,
+                updatedAt: new Date().toISOString(),
+                lastModified: Date.now()
+              }
+            });
+            
+            results.push({
+              productId: update.productId,
+              oldStock,
+              newStock,
+              result: { numAffected: 1 }
+            });
+          }
+          
+          return { success: true, results };
+        },
+        nedb: async () => {
+          const results = [];
+          
+          for (const update of stockUpdates) {
+            const product = await promisify(
+              db.products.findOne.bind(db.products), 
+              { _id: update.productId }
+            );
+            
+            if (!product) {
+              throw new Error(`Product not found: ${update.productId}`);
+            }
+            
+            const newStock = Math.max(0, product.stock - update.quantity);
+            
+            const result = await promisify(
+              db.products.update.bind(db.products),
+              { _id: update.productId },
+              { $set: { stock: newStock } },
+              {}
+            );
+            
+            results.push({
+              productId: update.productId,
+              oldStock: product.stock,
+              newStock: newStock,
+              result: result
+            });
+          }
+          
+          return { success: true, results };
         }
-        
-        // Calculate new stock
-        const newStock = Math.max(0, product.stock - update.quantity);
-        
-        // Update the product
-        const result = await promisify(
-          db.products.update.bind(db.products),
-          { _id: update.productId },
-          { $set: { stock: newStock } },
-          {}
-        );
-        
-        results.push({
-          productId: update.productId,
-          oldStock: product.stock,
-          newStock: newStock,
-          result: result
-        });
-      }
-      
-      return { success: true, results };
+      });
     } catch (error) {
       console.error('Error updating product stock:', error);
       throw error;
@@ -81,7 +399,15 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:getProduct', async (event, id) => {
     try {
-      return await promisify(db.products.findOne.bind(db.products), { _id: id });
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const doc = await rxDatabase.products.findOne(id).exec();
+          return doc ? doc.toJSON() : null;
+        },
+        nedb: async () => {
+          return await promisify(db.products.findOne.bind(db.products), { _id: id });
+        }
+      });
     } catch (error) {
       console.error(`Error fetching product ${id}:`, error);
       throw error;
@@ -90,11 +416,25 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:addProduct', async (event, product) => {
     try {
-      // Remove empty barcode fields to avoid unique constraint issues
-      if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
-        delete product.barcode;
-      }
-      return await promisify(db.products.insert.bind(db.products), product);
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          // Remove empty barcode fields to avoid unique constraint issues
+          if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+            delete product.barcode;
+          }
+          
+          const productWithDefaults = db.addDefaultFields(product);
+          const doc = await rxDatabase.products.insert(productWithDefaults);
+          return doc.toJSON();
+        },
+        nedb: async () => {
+          // Remove empty barcode fields to avoid unique constraint issues
+          if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+            delete product.barcode;
+          }
+          return await promisify(db.products.insert.bind(db.products), product);
+        }
+      });
     } catch (error) {
       console.error('Error adding product:', error);
       throw error;
@@ -103,16 +443,35 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:updateProduct', async (event, id, product) => {
     try {
-      // Remove empty barcode fields to avoid unique constraint issues
-      if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
-        delete product.barcode;
-      }
-      return await promisify(
-        db.products.update.bind(db.products),
-        { _id: id },
-        { $set: product },
-        {}
-      );
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          // Remove empty barcode fields to avoid unique constraint issues
+          if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+            delete product.barcode;
+          }
+          
+          const doc = await rxDatabase.products.findOne(id).exec();
+          if (!doc) {
+            throw new Error(`Product not found: ${id}`);
+          }
+          
+          const updateData = db.updateWithTracking(product);
+          await doc.update({ $set: updateData });
+          return { numAffected: 1 };
+        },
+        nedb: async () => {
+          // Remove empty barcode fields to avoid unique constraint issues
+          if (product.barcode === '' || product.barcode === null || product.barcode === undefined) {
+            delete product.barcode;
+          }
+          return await promisify(
+            db.products.update.bind(db.products),
+            { _id: id },
+            { $set: product },
+            {}
+          );
+        }
+      });
     } catch (error) {
       console.error(`Error updating product ${id}:`, error);
       throw error;
@@ -121,11 +480,23 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:deleteProduct', async (event, id) => {
     try {
-      return await promisify(
-        db.products.remove.bind(db.products),
-        { _id: id },
-        {}
-      );
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const doc = await rxDatabase.products.findOne(id).exec();
+          if (!doc) {
+            throw new Error(`Product not found: ${id}`);
+          }
+          await doc.remove();
+          return { numRemoved: 1 };
+        },
+        nedb: async () => {
+          return await promisify(
+            db.products.remove.bind(db.products),
+            { _id: id },
+            {}
+          );
+        }
+      });
     } catch (error) {
       console.error(`Error deleting product ${id}:`, error);
       throw error;
@@ -135,7 +506,15 @@ const setupDbHandlers = () => {
   // Category handlers
   ipcMain.handle('db:getCategories', async () => {
     try {
-      return await promisify(db.categories.find.bind(db.categories), {});
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const docs = await rxDatabase.categories.find().exec();
+          return docs.map(doc => doc.toJSON());
+        },
+        nedb: async () => {
+          return await promisify(db.categories.find.bind(db.categories), {});
+        }
+      });
     } catch (error) {
       console.error('Error fetching categories:', error);
       throw error;
@@ -144,7 +523,19 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:addCategory', async (event, category) => {
     try {
-      return await promisify(db.categories.insert.bind(db.categories), category);
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const categoryWithDefaults = db.addDefaultFields({
+            ...category,
+            isActive: category.isActive !== undefined ? category.isActive : true
+          });
+          const doc = await rxDatabase.categories.insert(categoryWithDefaults);
+          return doc.toJSON();
+        },
+        nedb: async () => {
+          return await promisify(db.categories.insert.bind(db.categories), category);
+        }
+      });
     } catch (error) {
       console.error('Error adding category:', error);
       throw error;
@@ -153,12 +544,26 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:updateCategory', async (event, id, category) => {
     try {
-      return await promisify(
-        db.categories.update.bind(db.categories),
-        { _id: id },
-        { $set: category },
-        {}
-      );
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const doc = await rxDatabase.categories.findOne(id).exec();
+          if (!doc) {
+            throw new Error(`Category not found: ${id}`);
+          }
+          
+          const updateData = db.updateWithTracking(category);
+          await doc.update({ $set: updateData });
+          return { numAffected: 1 };
+        },
+        nedb: async () => {
+          return await promisify(
+            db.categories.update.bind(db.categories),
+            { _id: id },
+            { $set: category },
+            {}
+          );
+        }
+      });
     } catch (error) {
       console.error(`Error updating category ${id}:`, error);
       throw error;
@@ -167,11 +572,23 @@ const setupDbHandlers = () => {
 
   ipcMain.handle('db:deleteCategory', async (event, id) => {
     try {
-      return await promisify(
-        db.categories.remove.bind(db.categories),
-        { _id: id },
-        {}
-      );
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const doc = await rxDatabase.categories.findOne(id).exec();
+          if (!doc) {
+            throw new Error(`Category not found: ${id}`);
+          }
+          await doc.remove();
+          return { numRemoved: 1 };
+        },
+        nedb: async () => {
+          return await promisify(
+            db.categories.remove.bind(db.categories),
+            { _id: id },
+            {}
+          );
+        }
+      });
     } catch (error) {
       console.error(`Error deleting category ${id}:`, error);
       throw error;
@@ -181,16 +598,24 @@ const setupDbHandlers = () => {
   // Transaction handlers
   ipcMain.handle('tx:create', async (event, transaction) => {
     try {
-      // Generate a receipt ID if not provided
-      if (!transaction.receiptId) {
-        // Create a receipt ID in format INV + 6 digits based on current date/time
-        const now = new Date();
-        const timestamp = now.getTime() % 1000000; // Last 6 digits of timestamp
-        const paddedNumber = String(timestamp).padStart(6, '0');
-        transaction.receiptId = `INV${paddedNumber}`;
-      }
-      
-      return await promisify(db.transactions.insert.bind(db.transactions), transaction);
+      return await executeDbOperation({
+        rxdb: async (rxDatabase) => {
+          const transactionWithDefaults = db.addDefaultFields({
+            ...transaction,
+            refunded: false,
+            date: new Date().toISOString()
+          });
+          const doc = await rxDatabase.transactions.insert(transactionWithDefaults);
+          return doc.toJSON();
+        },
+        nedb: async () => {
+          return await promisify(db.transactions.insert.bind(db.transactions), {
+            ...transaction,
+            refunded: false,
+            date: new Date().toISOString()
+          });
+        }
+      });
     } catch (error) {
       console.error('Error creating transaction:', error);
       throw error;
@@ -847,4 +1272,4 @@ const setupDbHandlers = () => {
 
 module.exports = {
   setupDbHandlers
-}; 
+};
