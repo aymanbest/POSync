@@ -188,6 +188,8 @@ POSync includes optional synchronization capabilities for multi-device setups:
 2. **Client Setup**: Connect other devices to the sync server
 3. **Automatic Sync**: Data synchronizes automatically across all connected devices
 
+For detailed sync setup instructions and troubleshooting, see [SYNC_SYSTEM_README.md](SYNC_SYSTEM_README.md).
+
 ## 🛠️ Troubleshooting
 
 ### Common Issues
@@ -241,6 +243,7 @@ This project includes comprehensive documentation to help you get started and co
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Complete contributor guidelines, development setup, and coding standards
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide for single-store and multi-location setups
+- **[SYNC_SYSTEM_README.md](SYNC_SYSTEM_README.md)** - Detailed synchronization system documentation and setup guide
 - **[CHANGELOG.md](CHANGELOG.md)** - Detailed release history and version notes
 - **[RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)** - Quality assurance and release verification checklist
 
