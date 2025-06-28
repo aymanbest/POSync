@@ -34,11 +34,11 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/posync.git"
+    "url": "https://github.com/aymanbest/posync.git"
   },
-  "homepage": "https://github.com/yourusername/posync#readme",
+  "homepage": "https://github.com/aymanbest/posync#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/posync/issues"
+    "url": "https://github.com/aymanbest/posync/issues"
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",

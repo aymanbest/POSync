@@ -49,7 +49,7 @@ Thank you for your interest in contributing to POSync! This document provides gu
 
 1. **Clone your fork**
    ```bash
-   git clone https://github.com/yourusername/posync.git
+   git clone https://github.com/aymanbest/posync.git
    cd posync
    ```
 

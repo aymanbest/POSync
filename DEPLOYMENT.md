@@ -9,7 +9,7 @@ This guide covers deploying POSync in production environments, from single-store
 1. **Download and Install**
    ```bash
    # Clone or download the repository
-   git clone https://github.com/yourusername/posync.git
+   git clone https://github.com/aymanbest/posync.git
    cd posync
    npm install
    ```
@@ -145,7 +145,7 @@ MAX_BACKUPS=30
    # Install Node.js 14+
    # Install Git
    # Clone repository
-   git clone https://github.com/yourusername/posync.git
+   git clone https://github.com/aymanbest/posync.git
    cd posync
    ```
 

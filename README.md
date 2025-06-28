@@ -41,7 +41,7 @@ Ensure you have the following installed on your system:
 
 1. **Download or Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/posync.git
+   git clone https://github.com/aymanbest/posync.git
    cd posync
    ```
 
