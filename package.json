@@ -10,7 +10,13 @@
     "build": "npm run build-react && electron-builder",
     "build-react": "webpack --config webpack.config.js",
     "build-css": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css",
-    "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css"
+    "postinstall": "npx tailwindcss -i ./assets/css/tailwind.css -o ./assets/css/tailwind.output.css",
+    "build-all": "npm run build-css && npm run build-react && npm run build",
+    "build-dir": "npm run build-react && electron-builder --dir",
+    "prepare-release": "node -e \"console.log('Run: scripts/prepare-release.bat (Windows) or scripts/prepare-release.sh (Mac/Linux)')\"",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version"
   },  "keywords": [
     "pos",
     "point-of-sale",

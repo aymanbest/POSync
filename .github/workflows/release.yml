@@ -1,0 +1,235 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create_release.outputs.id }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_tag: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: POSync Release ${{ steps.get_version.outputs.version }}
+          body: |    
+            ## Installation
+            
+            ### Windows
+            Download and run the `.exe` installer
+            
+            ### macOS
+            Download and install the `.dmg` file
+            
+            ### Linux
+            Download and run the `.AppImage` file
+            
+            ## System Requirements
+            - Windows 10 or later / macOS 10.15 or later / Linux (64-bit)
+            - 4GB RAM minimum
+            - 500MB free disk space
+            
+            For more information, see the [README](https://github.com/${{ github.repository }}/blob/main/README.md).
+          draft: false
+          prerelease: false
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build CSS
+        run: npm run build-css
+
+      - name: Build React
+        run: npm run build-react
+
+      - name: Build Electron App
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find and upload Windows executable
+        run: |
+          $exe = Get-ChildItem -Path "dist" -Recurse -Filter "*.exe" | Select-Object -First 1
+          if ($exe) {
+            Write-Host "Found executable: $($exe.FullName)"
+            echo "ASSET_PATH=$($exe.FullName)" >> $env:GITHUB_ENV
+            echo "ASSET_NAME=POSync-Setup-${{ needs.create-release.outputs.release_tag }}.exe" >> $env:GITHUB_ENV
+          } else {
+            Write-Host "No executable found!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET_PATH }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/octet-stream
+
+  build-macos:
+    needs: create-release
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build CSS
+        run: npm run build-css
+
+      - name: Build React
+        run: npm run build-react
+
+      - name: Build Electron App
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find and upload macOS DMG
+        run: |
+          DMG_FILE=$(find dist -name "*.dmg" -type f | head -1)
+          if [ -f "$DMG_FILE" ]; then
+            echo "Found DMG: $DMG_FILE"
+            echo "ASSET_PATH=$DMG_FILE" >> $GITHUB_ENV
+            echo "ASSET_NAME=POSync-${{ needs.create-release.outputs.release_tag }}.dmg" >> $GITHUB_ENV
+          else
+            echo "No DMG found!"
+            exit 1
+          fi
+
+      - name: Upload macOS Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET_PATH }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/octet-stream
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build CSS
+        run: npm run build-css
+
+      - name: Build React
+        run: npm run build-react
+
+      - name: Build Electron App
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find and upload Linux AppImage
+        run: |
+          APPIMAGE_FILE=$(find dist -name "*.AppImage" -type f | head -1)
+          if [ -f "$APPIMAGE_FILE" ]; then
+            echo "Found AppImage: $APPIMAGE_FILE"
+            echo "ASSET_PATH=$APPIMAGE_FILE" >> $GITHUB_ENV
+            echo "ASSET_NAME=POSync-${{ needs.create-release.outputs.release_tag }}.AppImage" >> $GITHUB_ENV
+          else
+            echo "No AppImage found!"
+            exit 1
+          fi
+
+      - name: Upload Linux Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ env.ASSET_PATH }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/octet-stream
+
+  notify:
+    needs: [create-release, build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Release Success Notification
+        if: needs.build-windows.result == 'success' && needs.build-macos.result == 'success' && needs.build-linux.result == 'success'
+        run: |
+          echo "✅ Release ${{ needs.create-release.outputs.release_tag }} has been successfully created!"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.release_tag }}"
+      
+      - name: Release Partial Success
+        if: needs.build-windows.result == 'success' || needs.build-macos.result == 'success' || needs.build-linux.result == 'success'
+        run: |
+          echo "⚠️ Release ${{ needs.create-release.outputs.release_tag }} partially completed!"
+          echo "Windows: ${{ needs.build-windows.result }}"
+          echo "macOS: ${{ needs.build-macos.result }}"
+          echo "Linux: ${{ needs.build-linux.result }}"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.release_tag }}"
+      
+      - name: Release Failure Notification
+        if: needs.build-windows.result == 'failure' && needs.build-macos.result == 'failure' && needs.build-linux.result == 'failure'
+        run: |
+          echo "❌ Release ${{ needs.create-release.outputs.release_tag }} failed to build!"
+          exit 1

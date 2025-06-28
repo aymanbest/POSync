@@ -1,0 +1,99 @@
+name: Create Release Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.2.0 - without v prefix)'
+        required: true
+        type: string
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      pre_release:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format. Please use semantic versioning (e.g., 1.2.3)"
+            exit 1
+          fi
+
+      - name: Check if tag exists
+        run: |
+          if git rev-parse "v${{ github.event.inputs.version }}" >/dev/null 2>&1; then
+            echo "❌ Tag v${{ github.event.inputs.version }} already exists"
+            exit 1
+          fi
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          git add package.json
+
+      - name: Create changelog entry
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          DATE=$(date +"%Y-%m-%d")
+          
+          # Create temporary file with new changelog entry
+          cat > temp_changelog.md << EOF
+          # Changelog
+          
+          ## [${VERSION}] - ${DATE}
+          
+          EOF
+          
+          # If CHANGELOG.md exists, append it to temp file, otherwise create new
+          if [ -f CHANGELOG.md ]; then
+            # Skip the first line (# Changelog) from existing file
+            tail -n +2 CHANGELOG.md >> temp_changelog.md
+          fi
+          
+          mv temp_changelog.md CHANGELOG.md
+          git add CHANGELOG.md
+
+      - name: Commit version bump
+        run: |
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
+          git push origin main
+          git push origin "v${{ github.event.inputs.version }}"
+
+      - name: Success notification
+        run: |
+          echo "✅ Successfully created tag v${{ github.event.inputs.version }}"
+          echo "🚀 The release workflow will automatically start building the release"
