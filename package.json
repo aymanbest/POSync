@@ -1,6 +1,6 @@
 {
   "name": "posync",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Modern Point of Sale Application with Sync Capabilities",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,8 @@
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version"
-  },  "keywords": [
+  },
+  "keywords": [
     "pos",
     "point-of-sale",
     "electron",
@@ -30,7 +31,8 @@
     "offline",
     "react",
     "sync"
-  ],  "author": "POSync Team",
+  ],
+  "author": "POSync Team",
   "license": "ISC",
   "repository": {
     "type": "git",

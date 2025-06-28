@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.2.0] - 2025-06-28
+
+
 All notable changes to POSync will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
